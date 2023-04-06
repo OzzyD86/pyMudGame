@@ -9,3 +9,7 @@ Currently  in four parts:
 * Game Engine
 *  Phrase replace
 * something else
+
+## Caveat
+
+Please note that some of the code is quite messy and uses imports weirdly and calls in ways that look suspicious for sake of ease. I'm looking for alternative workable methods and am open to suggestions as opposed to mere shoutdowns. Thanks :)
