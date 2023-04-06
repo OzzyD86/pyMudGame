@@ -1,7 +1,7 @@
 import json
-import sys
-sys.path.append("../")
-import mapper
+#import sys
+#sys.path.append("../")
+#import mapper
 
 class gEngine():
 	def __init__(self):
@@ -9,7 +9,7 @@ class gEngine():
 		self.tickOps = []
 		self.time = 0
 		self.position = {"x" : 0,"y" : 0 }
-		self.mapp = mapper.mapper()
+#		self.mapp = mapper.mapper()
 
 	def load(self, name):
 		d = open(name, "r")
@@ -18,6 +18,9 @@ class gEngine():
 		self.time = op['time']
 		self.position = op['self']
 		self.mapp.raw_load(op['map'])
+	
+	def partLoad(self, part, obj):
+		setattr(self, part, obj)
 		
 	def tick(self, quantity = 1):
 		for i in range(quantity):
