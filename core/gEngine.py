@@ -1,22 +1,69 @@
 import json
-#import sys
+import sys
 #sys.path.append("../")
 #import mapper
+
+def array_merge(a, b, path = None):
+	if path is None: path = []
+	
+	for key in b:
+		if (key in a):
+			pass
+			if isinstance(a[key], dict) and isinstance(b[key], dict):
+				a[key] = array_merge(a[key], b[key])
+			elif isinstance(a[key], list) and isinstance(b[key], list):
+				a[key] += b[key]
+			elif a[key] == b[key]:
+				# Do nothing
+				pass
+			else:
+				a[key] = b[key]
+		else:
+			a[key] = b[key]
+		#print(key)
+	return a
+
+def split_special(string = "", around = " "):
+	sp_string = "%%"
+	exp = []
+	
+	while (string.find("\"") >= 0):
+		st = string.find("\"")
+		en = string.find("\"", st+1)
+		if (en < st):
+			break
+		#print(en, st)
+		#print(string[st+1:en])
+		exp.append(string[st+1:en])
+		string = string[:st] + sp_string + string[en+1:]
+		#print(string)
+	
+	expl_in = string.split(around)
+	expl_out = []
+	for i in expl_in:
+		if (i == "%%"):
+			expl_out.append(exp.pop(0))
+		else:
+			expl_out.append(i)
+	
+	return expl_out
 
 class gEngine():
 	def __init__(self):
 		self.out = ""
+		self.cmds = {}
 		self.tickOps = []
 		self.time = 0
-		self.position = {"x" : 0,"y" : 0 }
-#		self.mapp = mapper.mapper()
+		self.player = [{ "time" : 0, "human" : True, "position": { "x": 0, "y" : 0 }}]
+		#self.position = {"x" : 0,"y" : 0 }
 
 	def load(self, name):
 		d = open(name, "r")
 		op = json.loads(d.read())
 		d.close()
 		self.time = op['time']
-		self.position = op['self']
+		#self.position = op['self']
+		self.player = op['player']
 		self.mapp.raw_load(op['map'])
 	
 	def partLoad(self, part, obj):
@@ -51,6 +98,56 @@ class gEngine():
 		
 	def save(self, name):
 		d = open(name, "w")
-		op = json.dumps({ "self" : self.position, "map" : self.mapp.raw_save(), "time" : self.time })
+		op = json.dumps({ "map" : self.mapp.raw_save(), "time" : self.time, "player" : self.player })
 		d.write(op)
 		d.close()
+
+	def coreRun(self):
+		transcript = ""
+		
+		self.mud.load(array_merge(self.muds, {
+			"START" : [  
+				"EXIT", 
+			],
+			"DIRECTION_TRADITIONAL" : [ "UP", "DOWN", "LEFT", "RIGHT" ],
+			"DIRECTION_CLASSIC" : ["NORTH", "EAST", "SOUTH", "WEST" ],
+			"DIRECTION" : [
+				#"[DIRECTION_TRADITIONAL]",
+				"[DIRECTION_CLASSIC]",
+			]
+		}))
+
+		self.data = { "piq" : 0 }
+
+		while True:
+			
+			x = input("Choose your action: ").upper()
+			o = self.mud.xref(x)
+			#print(o)
+			if (o):
+				if (x == "EXIT"):
+					#for i in self.mapp.list_tiles():
+					#	print(i)
+					self.save("test.json")
+					print(transcript)
+					ff = open("transcript.txt", "w")
+					ff.write(transcript)
+					ff.close()
+					sys.exit(1)
+				else:
+					p = split_special(x, " ")
+					#print(p)
+					#p = x.split(" ")
+					foo = __import__(self.cmds[p[0]][0])
+					r = getattr(foo, self.cmds[p[0]][1])
+					a = r(self, x)
+					self.player[self.data['piq']]['time'] += a.pushTime()
+					while (self.player[0]['time'] > self.time):
+						self.tick()
+					t = self.passiveTranscript()
+					transcript += "> " + x + "\n" + a.describe() + " " + t + "\n\n"
+					print(a.describe() + t)
+		#			print(t)
+				pass
+			else:
+				print(x + " is invalid")

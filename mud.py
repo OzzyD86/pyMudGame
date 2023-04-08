@@ -3,6 +3,7 @@ class mud():
 		self.checker = {}
 		
 		pass
+		
 	def load(self, data):
 		self.checker = data
 		
@@ -32,13 +33,22 @@ class mud():
 						return []
 				else:
 					for i in self.checker[p]:
-	#					print(i[:i.find("[")]):
+						#print("DEBUG: ", c, ", ", i) 
+						#print(c, i, string)
+#						print("DEBUG: ", i[:i.find("[")], len(i[:i.find("[")]))
+						cd = c.find("[")
+						
+						#print(cd)
 						if (i.find("[") < 0):
-							if (string[:c.find("[")] + i + c[c.find("]") + 1:] == string):
+							if (string[:cd] + i + c[c.find("]") + 1:] == string):
+								#print(string[:c.find("[")] + i + c[c.find("]") + 1:] + " is identical")
 								outs.append(string[:c.find("[")] + i + c[c.find("]") + 1:])
-						elif (string[:c.find("[")] + i[:i.find("[")] == string[:i.find("[")]):
+						elif (string[:cd] + i[:i.find("[")] == string[:cd] + string[:i.find("[")]):
 	#						print("Match")
-							outs.append(string[:c.find("[")] + i + c[c.find("]") + 1:])
+							outs.append(string[:cd] + i + c[c.find("]") + 1:])
+							#print("Match between '" + string[:cd] + i[:i.find("[")] + "' and '" + string[:cd] + string[:i.find("[")] + "'")
+						#else:
+						#	print("No match between '" + string[:cd] + i[:i.find("[")] + "' and '" + string[:cd] + string[:i.find("[")] + "'")
 		return outs
 		
 	def xref(self, prompt):

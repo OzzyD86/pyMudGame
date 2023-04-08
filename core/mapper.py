@@ -24,7 +24,15 @@ class mapper():
 		z = False
 		if (not (x,y) in self.tiles):
 			self.tiles[x,y] = {"type" : random.randrange(0,5), "storage" : random.choice([True, False])}
-			
+			if (self.tiles[x,y]['type'] == 0):
+				q = random.randrange(0, 5)
+				print(q)
+				if (q == 2):
+					self.tiles[x,y]['house'] = True
+					print("Spawned a house!")
+				else:
+					self.tiles[x,y]['house'] = False
+					
 			if (self.tiles[x,y]['storage'] == True):
 				self.tiles[x,y]['contents'] = []
 				
@@ -34,11 +42,11 @@ class mapper():
 
 			if (z or force_edging):			
 				for i in ORTHS:
-					print(i)
+					#print(i)
 					if (not (x+i[0], y+i[1]) in self.tiles):
 						if (not (x+i[0], y+i[1]) in self.edge_tiles):
 							self.edge_tiles.append((x+i[0], y+i[1]))
-			print(self.edge_tiles)
+			#print(self.edge_tiles)
 		else:
 			return False
 	
@@ -84,6 +92,51 @@ class mapper():
 	def save(self, file):	# Not supported yet
 		print("NOT SUPPORTED")
 		return "NOT SUPPORTED";
+
+	def aStarSearch(self, start, finish, iterations = 100, partial_object = []):
+		tried_squares = []
+		its = 0
+		if not (partial_object == []):
+			pass
+		else:
+			search = { abs(start[0] - finish[0]) + abs(start[1] - finish[1]) : [{ "current" : start, "history" : [] }] }
+			
+		
+		while (True):
+			p = list(search.keys())
+			p.sort()
+			
+			t = search[p[0]]
+			del search[p[0]]
+			
+			for i in t:
+				for j in ORTHS:
+					tr = (i['current'][0] + j[0], i['current'][1] + j[1])
+					if not (tr in tried_squares):
+						if (tr in self.tiles):
+							rtdt = abs(tr[0] - finish[0]) + abs(tr[1] - finish[1])
+							if (rtdt == 0):
+								#print(start)
+								print({ "current" : tr, "history" : i['history'] + [i['current'], finish] })
+								print("Found it")
+								return { "current" : tr, "history" : i['history'] + [i['current'], finish] }
+								#sys.exit(1)
+							if (not rtdt in search):
+								search[rtdt] = [{ "current" : tr, "history" : i['history'] + [i['current']] }]
+							else:
+								search[rtdt].append({ "current" : tr, "history" : i['history'] + [i['current']] })
+						tried_squares.append(tr)
+				its += 1
+			
+			
+			if (its > iterations):
+				return search
+		print (p)
+		p.sort()
+		x = p[0]
+		print(x)
+	
+		
 
 if (False):
 	#y = 
