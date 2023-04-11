@@ -20,6 +20,7 @@ class doNPCTick(core.tickableObject.tickableObject):
 				#print(ra)
 				if (ra <= 7):
 					self.out += "An NPC is within detectable range of the player. "
+					if (True):
 						if (i['nature'] == "chaser"):
 							self.out += "They start to follow. "
 							a = self.gEngine.mapp.aStarSearch((i['position']['x'], i['position']['y']), (pl['position']['x'], pl['position']['y']))['history'][1:]

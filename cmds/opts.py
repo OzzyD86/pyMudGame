@@ -2,7 +2,7 @@ class head():
 	def __init__(self, gEngine, opts):
 		self.out = ""
 		self.ge = gEngine
-		p = opts.split(" ")
+		p = opts#.split(" ")
 		pl = gEngine.player[gEngine.data['piq']]
 
 		if (p[1] == "NORTH"):

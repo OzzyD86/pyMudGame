@@ -60,6 +60,7 @@ ge.partLoad("mud", mud.mud())
 #ge.load("test.json")
 ge.tickOps.append(Hello)
 ge.tickOps.append(tickers.doNPCtick.doNPCTick)
+ge.new()
 ge.cmds = cmds
 ge.muds = muds
 print("Done.")

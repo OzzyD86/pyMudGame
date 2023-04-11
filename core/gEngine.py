@@ -52,8 +52,9 @@ class gEngine():
 	def __init__(self):
 		self.cmds = {}
 		self.tickOps = []
-		self.new()
 		self.loaders = []
+		self.player = [{ "time" : 0, "human" : True, "position": { "x": 0, "y" : 0 }}]
+		#self.new()
 		#self.position = {"x" : 0,"y" : 0 }
 
 	def new(self):
