@@ -20,11 +20,32 @@ class doNPCTick(core.tickableObject.tickableObject):
 				#print(ra)
 				if (ra <= 7):
 					self.out += "An NPC is within detectable range of the player. "
-
-						#self.out += "They start to follow. "
-						#a = self.gEngine.mapp.aStarSearch((i['position']['x'], i['position']['y']), (pl['position']['x'], pl['position']['y']))['history'][1:]
-						#i['route'] = a
-						#print("Path obj: ", a)
+						if (i['nature'] == "chaser"):
+							self.out += "They start to follow. "
+							a = self.gEngine.mapp.aStarSearch((i['position']['x'], i['position']['y']), (pl['position']['x'], pl['position']['y']))['history'][1:]
+							i['mode'] = "chase"
+							i['data'] = { "location" : pl['position'] }
+							i['route'] = a.copy()
+							print("Path obj: ", a)
+						elif (i['nature'] == "shouter"):
+							self.out += "They shout. "
+							p = 0
+							for j in npcs:
+								if not (i == j):
+									
+									ra = (abs(i['position']['x'] - j['position']['x'])) + abs((i['position']['y'] - j['position']['y']))
+									if (ra <= 15 and j['mode'] != "chase"):
+										print(j)
+										p += 1
+										a = self.gEngine.mapp.aStarSearch((j['position']['x'], j['position']['y']), (i['position']['x'], i['position']['y']))['history'][1:]
+										print("a:", a)
+										j['data'] = { "location" : i['position'] }
+										j['mode'] = "alert"
+										j['route'] = a.copy()
+										print(j)
+									#sys.exit(1)
+							if (p > 0):
+								self.out += str(p) + " more people are alerted! "
 				
 				via = []
 				if (("route" in i) and (len(i['route']) > 0)):
@@ -32,12 +53,14 @@ class doNPCTick(core.tickableObject.tickableObject):
 					nx = (abs(i['position']['x'] - x[0]) + abs(i['position']['y'] - x[1])) 
 					if (nx <= 1):
 						i['position'] = { "x" : x[0], "y" : x[1] }
-						print("Update NPC's position based on a route... ")
+						#print("Update NPC's position based on a route... ")
 					else:
-						print(nx)
-						print("Cannot move NPC at " + str(pl['position']) + " to " + str(x))
+						print(x, nx, i['route'])
+						#print(nx)
+						print("Cannot move NPC at " + str(i['position']) + " to " + str(x))
 						print("Was there an issue?")
 				else:
+					i['mode'] = "frolick"
 					# Just frollick
 					for j in [(0,1), (1, 0), (0,-1), (-1, 0)]:
 						if ((i['position']['x'] + j[0], i['position']['y'] + j[1]) in self.gEngine.mapp.tiles):
@@ -47,7 +70,7 @@ class doNPCTick(core.tickableObject.tickableObject):
 						ch = random.choice(via)
 						self.out += "Update NPC position from " + str(i['position']) + " to " + str(ch) + ".\n"
 						i['position'] = { "x" : ch[0], "y" : ch[1] }
-				print(i)
+				#print(i)
 				i['time'] += 1.4
 			else:
 				print("NPC waiting...")
@@ -70,4 +93,4 @@ class doNPCTick(core.tickableObject.tickableObject):
 			if (len(via) > 0):
 				w = random.choice(via)
 				print("Spawn at " + str(w) + "?")
-				self.gEngine.player.append({ "position" : { "x" : w[0], "y": w[1] }, "time" : self.gEngine.time, "human" : False }) 
+				self.gEngine.player.append({ "position" : { "x" : w[0], "y": w[1] }, "time" : self.gEngine.time, "human" : False, "nature" : random.choice(["chaser", "chaser", "shouter"]), "mode" : "frolick", "data": {} })

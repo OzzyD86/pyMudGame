@@ -1,6 +1,7 @@
 ORTHS = [(0,1), (1,0), (0,-1), (-1, 0)]
 
-import random, json
+import random, json, math as maths
+import noise2
 #import noise
 
 #random.seed(1) # We won't need this in the future!
@@ -9,7 +10,15 @@ class mapper():
 	def __init__(self):
 		self.tiles = {}
 		self.edge_tiles = [(0,0)]
+		self.nm = noise2.noiseMachine()
+		self.nm.buildNoiseBase(128)
+		self.nm.buildNoiseBase(64)
+		# Sorted?
 		pass
+	
+	def reset(self):
+		self.tiles = {}
+		self.edge_tiles = [(0,0)]
 	
 	def get_tile(self, x = 0, y = 0):
 		if ((x,y) in self.tiles):
@@ -23,9 +32,14 @@ class mapper():
 	def set_tile(self, x = 0, y = 0, force_edging = True):
 		z = False
 		if (not (x,y) in self.tiles):
-			self.tiles[x,y] = {"type" : random.randrange(0,5), "storage" : random.choice([True, False])}
+			np = self.nm.locBuild((x, y))[0,0]
+			print(np)
+			mappo = maths.floor(np / 255 * 4)
+			#mappo = 
+			print(mappo)
+			self.tiles[x,y] = {"type" : int(mappo), "storage" : random.choice([True, False])}
 			if (self.tiles[x,y]['type'] == 0):
-				q = random.randrange(0, 5)
+				q = random.randrange(0, 3)
 				print(q)
 				if (q == 2):
 					self.tiles[x,y]['house'] = True
@@ -130,6 +144,7 @@ class mapper():
 			
 			
 			if (its > iterations):
+				print("Iterations exceeded")
 				return search
 		print (p)
 		p.sort()

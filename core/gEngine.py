@@ -1,5 +1,5 @@
 import json
-import sys
+import sys, importlib
 #sys.path.append("../")
 #import mapper
 
@@ -50,13 +50,21 @@ def split_special(string = "", around = " "):
 
 class gEngine():
 	def __init__(self):
-		self.out = ""
 		self.cmds = {}
 		self.tickOps = []
-		self.time = 0
-		self.player = [{ "time" : 0, "human" : True, "position": { "x": 0, "y" : 0 }}]
+		self.new()
+		self.loaders = []
 		#self.position = {"x" : 0,"y" : 0 }
 
+	def new(self):
+		self.out = ""
+		self.transcript = ""
+		self.time = 0
+		self.player = [{ "time" : 0, "human" : True, "position": { "x": 0, "y" : 0 }}]
+		for i in self.loaders:
+			getattr(self, i).reset()
+		self.mapp.reset()
+		
 	def load(self, name):
 		d = open(name, "r")
 		op = json.loads(d.read())
@@ -67,6 +75,7 @@ class gEngine():
 		self.mapp.raw_load(op['map'])
 	
 	def partLoad(self, part, obj):
+		self.loaders.append(part)
 		setattr(self, part, obj)
 		
 	def tick(self, quantity = 1):
@@ -103,7 +112,7 @@ class gEngine():
 		d.close()
 
 	def coreRun(self):
-		transcript = ""
+		self.transcript = ""
 		
 		self.mud.load(array_merge(self.muds, {
 			"START" : [  
@@ -129,23 +138,24 @@ class gEngine():
 					#for i in self.mapp.list_tiles():
 					#	print(i)
 					self.save("test.json")
-					print(transcript)
+					print(self.transcript)
 					ff = open("transcript.txt", "w")
-					ff.write(transcript)
+					ff.write(self.transcript)
 					ff.close()
 					sys.exit(1)
 				else:
 					p = split_special(x, " ")
 					#print(p)
 					#p = x.split(" ")
-					foo = __import__(self.cmds[p[0]][0])
+					foo = importlib.import_module(self.cmds[p[0]][0])
+					#foo = __import__(self.cmds[p[0]][0])
 					r = getattr(foo, self.cmds[p[0]][1])
-					a = r(self, x)
+					a = r(self, p)
 					self.player[self.data['piq']]['time'] += a.pushTime()
 					while (self.player[0]['time'] > self.time):
 						self.tick()
 					t = self.passiveTranscript()
-					transcript += "> " + x + "\n" + a.describe() + " " + t + "\n\n"
+					self.transcript += "> " + x + "\n" + a.describe() + " " + t + "\n\n"
 					print(a.describe() + t)
 		#			print(t)
 				pass

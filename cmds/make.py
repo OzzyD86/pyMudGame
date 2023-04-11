@@ -4,7 +4,7 @@ import math as maths
 class make():
 	def __init__(self, gEngine, opts):
 		self.out = ""
-		p = opts.split(" ")
+		p = opts#.split(" ")
 		if (p[1] == "MAP"):
 			print("Let's make a map")
 			img = Image.new("RGB", (1960, 1080))

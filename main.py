@@ -1,13 +1,14 @@
 print("Loading dependencies...")
 
-import importlib, sys, random
-
-
+config = {
+	"loaders" : [ "cmds.opts", "cmds.make", "cmds.engine"]
+}
 import mud, core.mapper
-import core.tickableObject
-import tickers.doNPCtick
+import core.tickableObject, tickers.doNPCtick
+import sys, random
 import json
 import core.gEngine
+import importlib
 
 from core.gEngine import array_merge
 
@@ -25,7 +26,7 @@ def countTiles(gEngine):
 
 print("Loading MORE dependencies...")
 	
-for i in ["cmds.opts", "cmds.make"]:
+for i in config['loaders']:
 	x = importlib.import_module(i)
 	#y = i.split(".")
 	#x = __import__(i)
@@ -58,7 +59,7 @@ ge.partLoad("mapp", core.mapper.mapper())
 ge.partLoad("mud", mud.mud())
 #ge.load("test.json")
 ge.tickOps.append(Hello)
-#ge.tickOps.append(tickers.doNPCtick.doNPCTick)
+ge.tickOps.append(tickers.doNPCtick.doNPCTick)
 ge.cmds = cmds
 ge.muds = muds
 print("Done.")
