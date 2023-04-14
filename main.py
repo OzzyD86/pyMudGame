@@ -16,6 +16,7 @@ print("Done.")
 
 muds = {}
 cmds = {}
+events = {}
 
 class Hello(core.tickableObject.tickableObject):
 	def runTick(self):
@@ -39,6 +40,9 @@ for i in config['loaders']:
 	if hasattr(x, "cmds"):
 		#print("Cmds")
 		cmds = array_merge(cmds, x.cmds)
+	if hasattr(x, "events"):
+		#print("Cmds")
+		events = array_merge(events, x.events)
 
 print("Done.")
 
@@ -63,6 +67,7 @@ ge.tickOps.append(tickers.doNPCtick.doNPCTick)
 ge.new()
 ge.cmds = cmds
 ge.muds = muds
+ge.events = events
 print("Done.")
 
 #ge.partLoad("mud", e)

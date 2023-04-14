@@ -21,12 +21,23 @@ class doNPCTick(core.tickableObject.tickableObject):
 				if (ra <= 7):
 					self.out += "An NPC is within detectable range of the player. "
 					if (True):
+						pt = self.gEngine.mapp.tiles[i['position']['x'], i['position']['y']]
+						if ("sightings" in pt):
+							pt['sightings'] += 1
+						else:
+							pt['sightings'] = 1
+							
+						print("ALERT: ", self.gEngine.mapp.tiles[i['position']['x'], i['position']['y']])
 						if (i['nature'] == "chaser"):
 							self.out += "They start to follow. "
-							a = self.gEngine.mapp.aStarSearch((i['position']['x'], i['position']['y']), (pl['position']['x'], pl['position']['y']))['history'][1:]
-							i['mode'] = "chase"
-							i['data'] = { "location" : pl['position'] }
-							i['route'] = a.copy()
+							a = self.gEngine.mapp.aStarSearch((i['position']['x'], i['position']['y']), (pl['position']['x'], pl['position']['y']))
+							if (isinstance(a, core.mapper.aStarComplete)):
+								#print(a.history)
+								i['route'] = a.history.copy()[1:]
+								i['mode'] = "chase"
+								i['data'] = { "location" : pl['position'] }
+							elif (isinstance(a, core.mapper.aStarPartial)):
+								i['route'] = a
 							print("Path obj: ", a)
 						elif (i['nature'] == "shouter"):
 							self.out += "They shout. "
@@ -38,28 +49,47 @@ class doNPCTick(core.tickableObject.tickableObject):
 									if (ra <= 15 and j['mode'] != "chase"):
 										print(j)
 										p += 1
-										a = self.gEngine.mapp.aStarSearch((j['position']['x'], j['position']['y']), (i['position']['x'], i['position']['y']))['history'][1:]
-										print("a:", a)
-										j['data'] = { "location" : i['position'] }
-										j['mode'] = "alert"
-										j['route'] = a.copy()
+										a = self.gEngine.mapp.aStarSearch((j['position']['x'], j['position']['y']), (i['position']['x'], i['position']['y']))
+										if (isinstance(a, core.mapper.aStarComplete)):
+											j['route'] = a.history.copy()[1:]
+											print("a:", a.history)
+											j['data'] = { "location" : i['position'] }
+											j['mode'] = "alert"
+										elif (isinstance(a, core.mapper.aStarParial)):
+											j['route'] = a
+#										j['route'] = a.copy()
 										print(j)
 									#sys.exit(1)
 							if (p > 0):
 								self.out += str(p) + " more people are alerted! "
 				
 				via = []
-				if (("route" in i) and (len(i['route']) > 0)):
-					x = i['route'].pop(0)
-					nx = (abs(i['position']['x'] - x[0]) + abs(i['position']['y'] - x[1])) 
-					if (nx <= 1):
-						i['position'] = { "x" : x[0], "y" : x[1] }
-						#print("Update NPC's position based on a route... ")
+				if ("route" in i):
+					if (isinstance(i['route'], core.mapper.aStarPartial)):
+						#print("Route IS a partial")
+						a = self.gEngine.mapp.aStarSearch(None, i['route'].finish, partial_object = i['route'])
+						if (isinstance(a, core.mapper.aStarComplete)):
+							print(a.history)
+							i['route'] = a.history.copy()[1:]
+						elif (isinstance(a, core.mapper.aStarPartial)):
+							i['route'] = a
+						else:
+							print("Well I don't know what's going on here!")
+					elif (len(i['route']) > 0):
+						x = i['route'].pop(0)
+						nx = (abs(i['position']['x'] - x[0]) + abs(i['position']['y'] - x[1])) 
+						if (nx <= 1):
+							i['position'] = { "x" : x[0], "y" : x[1] }
+							#print("Update NPC's position based on a route... ")
+						else:
+							print(x, nx, i['route'])
+							#print(nx)
+							print("Cannot move NPC at " + str(i['position']) + " to " + str(x))
+							print("Was there an issue?")
 					else:
-						print(x, nx, i['route'])
-						#print(nx)
-						print("Cannot move NPC at " + str(i['position']) + " to " + str(x))
-						print("Was there an issue?")
+						print(i['route'])
+						del i['route']						
+						print("I think we're done with routing?")
 				else:
 					i['mode'] = "frolick"
 					# Just frollick
@@ -69,12 +99,12 @@ class doNPCTick(core.tickableObject.tickableObject):
 					
 					if (len(via) > 0):
 						ch = random.choice(via)
-						self.out += "Update NPC position from " + str(i['position']) + " to " + str(ch) + ".\n"
+						#self.out += "Update NPC position from " + str(i['position']) + " to " + str(ch) + ".\n"
 						i['position'] = { "x" : ch[0], "y" : ch[1] }
 				#print(i)
 				i['time'] += 1.4
-			else:
-				print("NPC waiting...")
+			#else:
+			#	print("NPC waiting...")
 		ti = len(self.gEngine.mapp.tiles)
 		print(str(ti) + " tile(s) should spawn " + str(ti // 50) + " NPCs, and there are " + str(c))
 		spw = (ti // 50) - c 

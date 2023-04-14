@@ -51,10 +51,10 @@ def split_special(string = "", around = " "):
 class gEngine():
 	def __init__(self):
 		self.cmds = {}
+		self.events = { "onMove" : [] }	# For example
 		self.tickOps = []
 		self.loaders = []
-		self.player = [{ "time" : 0, "human" : True, "position": { "x": 0, "y" : 0 }}]
-		#self.new()
+		self.new()
 		#self.position = {"x" : 0,"y" : 0 }
 
 	def new(self):
@@ -73,6 +73,7 @@ class gEngine():
 		self.time = op['time']
 		#self.position = op['self']
 		self.player = op['player']
+		self.data = op['data']
 		self.mapp.raw_load(op['map'])
 	
 	def partLoad(self, part, obj):
@@ -108,7 +109,7 @@ class gEngine():
 		
 	def save(self, name):
 		d = open(name, "w")
-		op = json.dumps({ "map" : self.mapp.raw_save(), "time" : self.time, "player" : self.player })
+		op = json.dumps({ "map" : self.mapp.raw_save(), "time" : self.time, "player" : self.player, "data" : self.data })
 		d.write(op)
 		d.close()
 
@@ -127,7 +128,7 @@ class gEngine():
 			]
 		}))
 
-		self.data = { "piq" : 0 }
+		self.data['piq'] = 0 # Spurious hack. Look into this?
 
 		while True:
 			

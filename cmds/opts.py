@@ -21,6 +21,10 @@ class head():
 		if (q['storage']):
 			self.out += " There is storage on this tile."
 
+		if ("onMove" in gEngine.events):
+			for i in gEngine.events['onMove']:
+				self.out += i(gEngine)
+
 		#print(gEngine.mapp.get_tile(gEngine.position['x'], gEngine.position['y']))
 		#print(p[1])
 		#print("Your current position is ", gEngine.position)
@@ -34,11 +38,18 @@ class head():
 	def describe(self):
 		#out = ""
 		return self.out
-				
+
+def evtMove(gEngine):
+	pass
+	
 muds = {
 	"START" : [ "HEAD [DIRECTION]" ]
 }
 
 cmds = {
 	"HEAD" : [ "cmds.opts", "head" ],
+}
+
+events = {
+	"onMove" : [ evtMove ]
 }

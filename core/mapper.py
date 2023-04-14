@@ -6,13 +6,37 @@ import noise2
 
 #random.seed(1) # We won't need this in the future!
 
+class aStarComplete():
+	def __init__(self, current, history):
+		self.current = current
+		self.history = history
+		#self.finish = finish
+	
+	def getHistory(self):
+		pass
+
+class aStarPartial():
+	def __init__(self, search, finish):
+		self.search = search
+		self.finish = finish
+		
+	def getContents(self):
+		return self.search
+
 class mapper():
-	def __init__(self):
-		self.tiles = {}
-		self.edge_tiles = [(0,0)]
+	def __init__(self, seed = 1024):
+		self.reset()
+		#self.tiles = {}
+		#self.edge_tiles = [(0,0)]
+		random.seed(seed)
 		self.nm = noise2.noiseMachine()
 		self.nm.buildNoiseBase(128)
 		self.nm.buildNoiseBase(64)
+		self.nm.addScope([0, 5, 0]).addScope([1, 19, 2])
+		self.houses = noise2.noiseMachine()
+		self.houses.buildNoiseBase(16)
+		self.houses.addScope([0, 4, 1])
+		#print(self.houses.noise)
 		# Sorted?
 		pass
 	
@@ -36,10 +60,12 @@ class mapper():
 			print(np)
 			mappo = maths.floor(np / 255 * 4)
 			#mappo = 
-			print(mappo)
+			#print(mappo)
 			self.tiles[x,y] = {"type" : int(mappo), "storage" : random.choice([True, False])}
 			if (self.tiles[x,y]['type'] == 0):
-				q = random.randrange(0, 3)
+				house = self.houses.locBuild((x, y))[0,0]
+				q = maths.floor(house / 255 * 5)
+				#q = random.randrange(0, 3)
 				print(q)
 				if (q == 2):
 					self.tiles[x,y]['house'] = True
@@ -110,8 +136,16 @@ class mapper():
 	def aStarSearch(self, start, finish, iterations = 100, partial_object = []):
 		tried_squares = []
 		its = 0
+
+		#print(partial_object)
+		
 		if not (partial_object == []):
-			pass
+			# Start is not required ... I don't think
+			if (isinstance(partial_object, aStarPartial)):
+				search = partial_object.getContents()
+				finish = partial_object.finish
+			else:
+				search = partial_object
 		else:
 			search = { abs(start[0] - finish[0]) + abs(start[1] - finish[1]) : [{ "current" : start, "history" : [] }] }
 			
@@ -133,7 +167,8 @@ class mapper():
 								#print(start)
 								print({ "current" : tr, "history" : i['history'] + [i['current'], finish] })
 								print("Found it")
-								return { "current" : tr, "history" : i['history'] + [i['current'], finish] }
+								return aStarComplete(tr, i['history'] + [i['current'], finish])
+								#return { "current" : tr, "history" : i['history'] + [i['current'], finish] }
 								#sys.exit(1)
 							if (not rtdt in search):
 								search[rtdt] = [{ "current" : tr, "history" : i['history'] + [i['current']] }]
@@ -145,7 +180,7 @@ class mapper():
 			
 			if (its > iterations):
 				print("Iterations exceeded")
-				return search
+				return aStarPartial(search, finish)
 		print (p)
 		p.sort()
 		x = p[0]

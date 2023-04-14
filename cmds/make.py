@@ -8,6 +8,7 @@ class make():
 		if (p[1] == "MAP"):
 			print("Let's make a map")
 			img = Image.new("RGB", (1960, 1080))
+			img_overlay = Image.new("RGBA", (1960, 1080), (0,0,0,0))
 			min_x = 0
 			min_y = 0
 			max_x = 0
@@ -32,13 +33,26 @@ class make():
 			scale = maths.floor(min(min_scale_x, min_scale_y))
 			#print("Scale is:", scale)
 			drw = ImageDraw.Draw(img)
+			ol = ImageDraw.Draw(img_overlay)
 			#print(gEngine.mapp.tiles.keys())
+			max_sight = 0
+			for i in range(min_x, max_x+2):
+				for j in range(min_y, max_y+2):
+					if ((i,j) in gEngine.mapp.tiles.keys()):
+						if ("sightings" in gEngine.mapp.tiles[i,j]):
+							if (gEngine.mapp.tiles[i,j]['sightings'] > max_sight):
+								max_sight = gEngine.mapp.tiles[i,j]['sightings']
+						pass
+
 			for i in range(min_x, max_x+2):
 				for j in range(min_y, max_y+2):
 					if ((i,j) in gEngine.mapp.tiles.keys()):
 						#print("Yes - ", (i,j))
 						drw.rectangle(((i - min_x) * scale, (j - min_y) * scale, (i - min_x + 1) * scale, (j - min_y + 1) * scale), fill=cols[gEngine.mapp.tiles[i,j]['type'] % len(cols)])
 						
+						if ("sightings" in gEngine.mapp.tiles[i,j]):
+							ol.rectangle(((i - min_x) * scale, (j - min_y) * scale, (i - min_x + 1) * scale, (j - min_y + 1) * scale), fill=(255,0,0,int(gEngine.mapp.tiles[i,j]['sightings'] / max_sight * 255)))
+							
 						if (gEngine.mapp.tiles[i,j]['type'] == 0) and ("house" in gEngine.mapp.tiles[i,j]) and (gEngine.mapp.tiles[i,j]['house'] == True):
 							drw.ellipse(((i - min_x + 0.2) * scale, (j - min_y + 0.2) * scale, (i - min_x + 0.8) * scale, (j - min_y + 0.8) * scale), fill=(255,0,0)) 
 							drw.ellipse(((i - min_x + 0.3) * scale, (j - min_y + 0.3) * scale, (i - min_x + 0.7) * scale, (j - min_y + 0.7) * scale), fill=(127,127,0)) 
@@ -48,12 +62,14 @@ class make():
 						
  #			drw.circle((gEngine.player[0]
 		#	drw.ellipse(((gEngine.position['x'] - min_x + 0.4) * scale, (gEngine.position['y'] - min_y + 0.4) * scale, (gEngine.position['x'] - min_x + 0.6) * scale, (gEngine.position['y'] - min_y + 0.6) * scale), fill=(255,0,0)) 
+			img.paste(img_overlay, (0,0), img_overlay)
 			for i in gEngine.player:
 				if (i['human'] == False):
-					print(i)
-					if ("route" in i and len(i['route']) > 0):
-						end = i['route'][-1]
-						drw.line(((i['position']['x'] - min_x + 0.5) * scale, (i['position']['y'] - min_y+0.5) * scale, (end[0] - min_x+0.5) * scale, (end[1] - min_y+0.5) * scale), fill=(0,0,255), width=5)
+					#print(i)
+					if ("route" in i):
+						if (isinstance(i['route'], list) and len(i['route']) > 0):
+							end = i['route'][-1]
+							drw.line(((i['position']['x'] - min_x + 0.5) * scale, (i['position']['y'] - min_y+0.5) * scale, (end[0] - min_x+0.5) * scale, (end[1] - min_y+0.5) * scale), fill=(0,0,255), width=5)
 					co = (0,0,255)
 				else:
 					co = (255,0,0)

@@ -23,16 +23,23 @@ class mapper():
 class noiseMachine():
 	noise = [] 
 
+	def __init__(self):
+		self.scope = []
+		
 	def buildNoiseBase(self, sz, maxrand = 255):
 		x = makeNoiseImage(sz, maxrand)
 		self.noise.append(x)
 		return x
 
+	def addScope(self, scope = [0, 1, 0]):
+		self.scope.append(scope)
+		return self
+
 	def locBuild(self, pos = (0,0), size = 1):
-		scope = [[0, 5, 0], [1, 19, 2]]
+		scope = self.scope.copy() # [[0, 5, 0], [1, 19, 2]]
 		nn = []
 		out = {}
-		for i in scope:
+		for i in self.scope:
 			nn.append(buildNoiseProfile(self.noise[i[0]], pos, i[1], size, (0, 0)).load())
 			
 		for x in range(0, size):
