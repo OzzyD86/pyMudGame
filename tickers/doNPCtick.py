@@ -55,7 +55,7 @@ class doNPCTick(core.tickableObject.tickableObject):
 											print("a:", a.history)
 											j['data'] = { "location" : i['position'] }
 											j['mode'] = "alert"
-										elif (isinstance(a, core.mapper.aStarParial)):
+										elif (isinstance(a, core.mapper.aStarPartial)):
 											j['route'] = a
 #										j['route'] = a.copy()
 										print(j)
@@ -106,8 +106,9 @@ class doNPCTick(core.tickableObject.tickableObject):
 			#else:
 			#	print("NPC waiting...")
 		ti = len(self.gEngine.mapp.tiles)
-		print(str(ti) + " tile(s) should spawn " + str(ti // 50) + " NPCs, and there are " + str(c))
-		spw = (ti // 50) - c 
+		print(str(ti) + " tile(s) should spawn " + str(ti // self.gEngine.config['core']['npcpt']) + " NPCs, and there are " + str(c))
+		spw = (ti // self.gEngine.config['core']['npcpt']) - c
+		if (spw < 0): spw = 0
 		print("Spawn " + str(spw) + " more!")
 		
 		for i in range(spw):

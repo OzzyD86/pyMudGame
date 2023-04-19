@@ -5,13 +5,13 @@ class head():
 		p = opts#.split(" ")
 		pl = gEngine.player[gEngine.data['piq']]
 
-		if (p[1] == "NORTH"):
+		if (p[1] in ["NORTH", "UP"]):
 			pl['position']['y'] -= 1
-		elif(p[1] == "SOUTH"):
+		elif(p[1] in ["SOUTH", "DOWN"]):
 			pl['position']['y'] += 1
-		elif (p[1] == "EAST"):
+		elif (p[1] in ["EAST", "RIGHT"]):
 			pl['position']['x'] += 1
-		elif(p[1] == "WEST"):
+		elif(p[1] in ["WEST", "LEFT"]):
 			pl['position']['x'] -= 1
 		
 		self.out += "You head " + p[1].lower() + "."
@@ -21,6 +21,10 @@ class head():
 		if (q['storage']):
 			self.out += " There is storage on this tile."
 
+		for j, i in {"east" : (1,0), "south" : (0,1), "north" : (0, -1), "west" : (-1, 0)}.items():
+			#print(i, j)
+			x = gEngine.mapp.get_tile(pl['position']['x']+i[0], pl['position']['y']+i[1])
+			
 		if ("onMove" in gEngine.events):
 			for i in gEngine.events['onMove']:
 				self.out += i(gEngine)
@@ -40,7 +44,7 @@ class head():
 		return self.out
 
 def evtMove(gEngine):
-	pass
+	return ""
 	
 muds = {
 	"START" : [ "HEAD [DIRECTION]" ]

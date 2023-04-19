@@ -19,9 +19,14 @@ class engine():
 				if (len(p) > 3 and p[3] == "AS"):
 					sav = p[4].strip("\"")
 				else:
-					sav = "test.json"
+					sav = "test"
 				gEngine.save(sav)
-				
+			elif (p[2] in [ "LOAD","OPEN" ]):
+#				try:
+					gEngine.load(p[3])
+#				except:
+#					print("No. That didn't work")
+#					self.out = ""
 			elif (p[2] == "NEW"):
 				gEngine.new()
 		#elif (p[1] == "TRANSCRIPT"):
@@ -39,7 +44,7 @@ class engine():
 		
 muds = {
 	"START" : [ "ENGINE [ENGINE_ACTION]" ],
-	"ENGINE_ACTION" : [ "EXIT", "GAME SAVE", "GAME SAVE AS [%STRING%]" ],
+	"ENGINE_ACTION" : [ "EXIT", "GAME SAVE", "GAME SAVE AS [%STRING%]", "GAME LOAD [%STRING%]" ],
 }
 
 cmds = {

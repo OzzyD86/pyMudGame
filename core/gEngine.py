@@ -1,5 +1,6 @@
-import json
+import json, pickle, pathlib
 import sys, importlib
+import random
 #sys.path.append("../")
 #import mapper
 
@@ -51,26 +52,37 @@ def split_special(string = "", around = " "):
 class gEngine():
 	def __init__(self):
 		self.cmds = {}
+		self.config = {  }
 		self.events = { "onMove" : [] }	# For example
 		self.tickOps = []
 		self.loaders = []
-		self.new()
+		self.data = {}
+		#self.new()
 		#self.position = {"x" : 0,"y" : 0 }
 
-	def new(self):
+	def new(self, seed):
 		self.out = ""
 		self.transcript = ""
 		self.time = 0
 		self.player = [{ "time" : 0, "human" : True, "position": { "x": 0, "y" : 0 }}]
 		for i in self.loaders:
 			getattr(self, i).reset()
-		self.mapp.reset()
+		self.config['seed'] = random.randrange(sys.maxsize)
+		self.mapp.reset(self.config['seed'])
 		
 	def load(self, name):
-		d = open(name, "r")
-		op = json.loads(d.read())
+		dir = "./saves/" + name
+		d = open(dir + "/main.pkl", "rb")
+		#d = open(name, "rb")
+		op = pickle.loads(d.read())
 		d.close()
 		self.time = op['time']
+		d = open(dir + "/defaults.pkl", "rb")
+		defs = pickle.loads(d.read())
+		d.close()
+		self.config['seed'] = defs['seed']
+		print("Seed is " + str(self.config['seed']))
+		self.mapp.reset(self.config['seed'])
 		#self.position = op['self']
 		self.player = op['player']
 		self.data = op['data']
@@ -108,11 +120,39 @@ class gEngine():
 		return x
 		
 	def save(self, name):
-		d = open(name, "w")
-		op = json.dumps({ "map" : self.mapp.raw_save(), "time" : self.time, "player" : self.player, "data" : self.data })
+		dir = "./saves/" + name 
+		pathlib.Path(dir).mkdir(exist_ok=True)
+		
+		d = open(dir + "/main.pkl", "wb")
+		op = pickle.dumps({ "map" : self.mapp.raw_save(), "time" : self.time, "player" : self.player, "data" : self.data })
 		d.write(op)
 		d.close()
-
+		d = open(dir + "/defaults.pkl", "wb")
+		d.write(pickle.dumps({ "seed" : self.config['seed'] }))
+		d.close()
+		
+	def cmdExec(self, cmd = ""):
+		o = self.mud.xref(cmd)
+		if (o):
+			if (cmd == "INITIALISE"):
+				self.mud.load(array_merge(self.muds, {
+					"START" : [ "EXIT" ],
+					"DIRECTION_TRADITIONAL" : [ "UP", "DOWN", "LEFT", "RIGHT" ],
+					"DIRECTION_CLASSIC" : ["NORTH", "EAST", "SOUTH", "WEST" ],
+					"DIRECTION" : [
+						"[DIRECTION_TRADITIONAL]",
+						"[DIRECTION_CLASSIC]",
+					]
+				}))
+			else:			
+				p = split_special(cmd, " ")
+				foo = importlib.import_module(self.cmds[p[0]][0])
+				r = getattr(foo, self.cmds[p[0]][1])
+				a = r(self, p)
+				return a
+		else:
+			print(cmd + " is invalid")	
+			
 	def coreRun(self):
 		self.transcript = ""
 		
@@ -130,6 +170,9 @@ class gEngine():
 
 		self.data['piq'] = 0 # Spurious hack. Look into this?
 
+#		x = sorted(self.player, key=lambda x: x['time'])
+#		print(x)
+		
 		while True:
 			
 			x = input("Choose your action: ").upper()
@@ -139,7 +182,7 @@ class gEngine():
 				if (x == "EXIT"):
 					#for i in self.mapp.list_tiles():
 					#	print(i)
-					self.save("test.json")
+					self.save("test")
 					print(self.transcript)
 					ff = open("transcript.txt", "w")
 					ff.write(self.transcript)

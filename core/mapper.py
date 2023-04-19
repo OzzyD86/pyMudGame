@@ -16,7 +16,8 @@ class aStarComplete():
 		pass
 
 class aStarPartial():
-	def __init__(self, search, finish):
+	def __init__(self, search, finish, ts = []):
+		self.tried_squares = ts
 		self.search = search
 		self.finish = finish
 		
@@ -25,7 +26,8 @@ class aStarPartial():
 
 class mapper():
 	def __init__(self, seed = 1024):
-		self.reset()
+		self.seed = seed
+		print("Set seed " + str(seed))
 		#self.tiles = {}
 		#self.edge_tiles = [(0,0)]
 		random.seed(seed)
@@ -40,9 +42,20 @@ class mapper():
 		# Sorted?
 		pass
 	
-	def reset(self):
+	def reset(self, seed = None):
 		self.tiles = {}
 		self.edge_tiles = [(0,0)]
+		del self.nm
+		del self.houses
+		random.seed(seed)
+		print("Reset seed " + str(seed))
+		self.nm = noise2.noiseMachine()
+		self.nm.buildNoiseBase(128)
+		self.nm.buildNoiseBase(64)
+		self.nm.addScope([0, 5, 0]).addScope([1, 19, 2])
+		self.houses = noise2.noiseMachine()
+		self.houses.buildNoiseBase(16)
+		self.houses.addScope([0, 4, 1])
 	
 	def get_tile(self, x = 0, y = 0):
 		if ((x,y) in self.tiles):
@@ -58,18 +71,25 @@ class mapper():
 		if (not (x,y) in self.tiles):
 			np = self.nm.locBuild((x, y))[0,0]
 			print(np)
-			mappo = maths.floor(np / 255 * 4)
+			mappo = maths.floor(np / 255 * 5)
 			#mappo = 
 			#print(mappo)
-			self.tiles[x,y] = {"type" : int(mappo), "storage" : random.choice([True, False])}
-			if (self.tiles[x,y]['type'] == 0):
+			self.tiles[x,y] = {"type" : int(mappo), "storage" : random.choice([True, False, False])}
+			if (self.tiles[x,y]['type'] in [0, 1]):
 				house = self.houses.locBuild((x, y))[0,0]
-				q = maths.floor(house / 255 * 5)
+				q = maths.floor(house / 255 * ((self.tiles[x,y]['type'] + 1) * 5))
 				#q = random.randrange(0, 3)
 				print(q)
 				if (q == 2):
 					self.tiles[x,y]['house'] = True
+					self.tiles[x,y]['storage'] = True
 					print("Spawned a house!")
+				elif (q == 3 and self.tiles[x,y]['type'] == 0):
+					self.tiles[x,y]['shop'] = True
+					print("Spawned a shop!")
+				elif (q == 4 and self.tiles[x,y]['type'] == 0):
+					self.tiles[x,y]['station'] = True
+					print("Spawned a station!")
 				else:
 					self.tiles[x,y]['house'] = False
 					
@@ -133,7 +153,7 @@ class mapper():
 		print("NOT SUPPORTED")
 		return "NOT SUPPORTED";
 
-	def aStarSearch(self, start, finish, iterations = 100, partial_object = []):
+	def aStarSearch(self, start, finish, iterations = 500, partial_object = []):
 		tried_squares = []
 		its = 0
 
@@ -142,6 +162,9 @@ class mapper():
 		if not (partial_object == []):
 			# Start is not required ... I don't think
 			if (isinstance(partial_object, aStarPartial)):
+				if (hasattr(partial_object, "tried_squares")):
+					tried_squares = partial_object.tried_squares
+				
 				search = partial_object.getContents()
 				finish = partial_object.finish
 			else:
@@ -149,11 +172,12 @@ class mapper():
 		else:
 			search = { abs(start[0] - finish[0]) + abs(start[1] - finish[1]) : [{ "current" : start, "history" : [] }] }
 			
-		
 		while (True):
 			p = list(search.keys())
 			p.sort()
-			
+			if (len(search) < 1):
+				return False
+				
 			t = search[p[0]]
 			del search[p[0]]
 			
@@ -180,7 +204,7 @@ class mapper():
 			
 			if (its > iterations):
 				print("Iterations exceeded")
-				return aStarPartial(search, finish)
+				return aStarPartial(search, finish, tried_squares)
 		print (p)
 		p.sort()
 		x = p[0]

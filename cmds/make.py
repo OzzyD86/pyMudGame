@@ -1,12 +1,31 @@
 from PIL import Image, ImageDraw
 import math as maths
 
+def marker(img, loc = (0,0)):
+	return img
+
 class make():
 	def __init__(self, gEngine, opts):
 		self.out = ""
+		heatmap = False
+		houses = True
 		p = opts#.split(" ")
 		if (p[1] == "MAP"):
 			print("Let's make a map")
+			nx = p[2:]
+			if (len(nx) > 0):
+				if (nx[0] == "WITH"):
+					nx.pop(0)
+					while (len(nx) > 0):
+						if (nx[0] == "HEAT" and nx[1] in ["ZONES", "ZONES,"]):
+							nx = nx[2:]
+							heatmap = True
+						elif(nx[0] == "NO" and nx[1] in ["HOUSES", "HOUSES,"]):
+							nx = nx[2:]
+							houses = False
+						else:
+							nx = nx[1:]
+						
 			img = Image.new("RGB", (1960, 1080))
 			img_overlay = Image.new("RGBA", (1960, 1080), (0,0,0,0))
 			min_x = 0
@@ -25,7 +44,7 @@ class make():
 					max_y = i[1]
 					
 				#print(i)
-			cols = [(255,255,255),(0,255,0), (127,127,127), (0, 127, 0), (0, 64, 0)]
+			cols = [(255,255,255),(192, 255, 192), (0,255,0), (0, 127, 0), (0, 64, 0), (127,127,127)]
 			print(min_x, max_x, min_y, max_y)
 			min_scale_x = 1960 / (max_x - min_x + 1)
 			min_scale_y = 1080 / (max_y - min_y + 1)
@@ -53,28 +72,46 @@ class make():
 						if ("sightings" in gEngine.mapp.tiles[i,j]):
 							ol.rectangle(((i - min_x) * scale, (j - min_y) * scale, (i - min_x + 1) * scale, (j - min_y + 1) * scale), fill=(255,0,0,int(gEngine.mapp.tiles[i,j]['sightings'] / max_sight * 255)))
 							
-						if (gEngine.mapp.tiles[i,j]['type'] == 0) and ("house" in gEngine.mapp.tiles[i,j]) and (gEngine.mapp.tiles[i,j]['house'] == True):
+						if (houses and gEngine.mapp.tiles[i,j]['type'] in [0, 1]) and ("house" in gEngine.mapp.tiles[i,j]) and (gEngine.mapp.tiles[i,j]['house'] == True):
 							drw.ellipse(((i - min_x + 0.2) * scale, (j - min_y + 0.2) * scale, (i - min_x + 0.8) * scale, (j - min_y + 0.8) * scale), fill=(255,0,0)) 
-							drw.ellipse(((i - min_x + 0.3) * scale, (j - min_y + 0.3) * scale, (i - min_x + 0.7) * scale, (j - min_y + 0.7) * scale), fill=(127,127,0)) 
+							drw.ellipse(((i - min_x + 0.3) * scale, (j - min_y + 0.3) * scale, (i - min_x + 0.7) * scale, (j - min_y + 0.7) * scale), fill=(127,127,0))
+
+						if (houses and gEngine.mapp.tiles[i,j]['type'] in [0, 1]) and ("station" in gEngine.mapp.tiles[i,j]) and (gEngine.mapp.tiles[i,j]['station'] == True):
+							drw.ellipse(((i - min_x + 0.3) * scale, (j - min_y + 0.3) * scale, (i - min_x + 0.7) * scale, (j - min_y + 0.7) * scale), fill=(127,127,255)) 
+							drw.ellipse(((i - min_x + 0.4) * scale, (j - min_y + 0.4) * scale, (i - min_x + 0.6) * scale, (j - min_y + 0.6) * scale), fill=(0,0,127))
+
+						if (houses and gEngine.mapp.tiles[i,j]['type'] in [0, 1]) and ("shop" in gEngine.mapp.tiles[i,j]) and (gEngine.mapp.tiles[i,j]['shop'] == True):
+							drw.ellipse(((i - min_x + 0.3) * scale, (j - min_y + 0.3) * scale, (i - min_x + 0.7) * scale, (j - min_y + 0.7) * scale), fill=(127,255,127)) 
+							drw.ellipse(((i - min_x + 0.4) * scale, (j - min_y + 0.4) * scale, (i - min_x + 0.6) * scale, (j - min_y + 0.6) * scale), fill=(0,127,0))
+
+						#elif ("storage" in gEngine.mapp.tiles[i,j] and gEngine.mapp.tiles[i,j]["storage"]):
+						#	drw.rectangle(((i - min_x + 0.3) * scale, (j - min_y + 0.3) * scale, (i - min_x +  0.7) * scale, (j - min_y + 0.7) * scale), outline=(63,127,0))
+							
 					else:
 						#print("No - ", (i,j))
 						pass
 						
  #			drw.circle((gEngine.player[0]
 		#	drw.ellipse(((gEngine.position['x'] - min_x + 0.4) * scale, (gEngine.position['y'] - min_y + 0.4) * scale, (gEngine.position['x'] - min_x + 0.6) * scale, (gEngine.position['y'] - min_y + 0.6) * scale), fill=(255,0,0)) 
-			img.paste(img_overlay, (0,0), img_overlay)
+			if (heatmap):
+				img.paste(img_overlay, (0,0), img_overlay)
 			for i in gEngine.player:
 				if (i['human'] == False):
 					#print(i)
 					if ("route" in i):
 						if (isinstance(i['route'], list) and len(i['route']) > 0):
 							end = i['route'][-1]
-							drw.line(((i['position']['x'] - min_x + 0.5) * scale, (i['position']['y'] - min_y+0.5) * scale, (end[0] - min_x+0.5) * scale, (end[1] - min_y+0.5) * scale), fill=(0,0,255), width=5)
+							#print(i['route'], i['route'][1:])
+							drw.line(((i['position']['x'] - min_x + 0.5) * scale, (i['position']['y'] - min_y+0.5) * scale, (i['route'][0][0] - min_x+0.5) * scale, (i['route'][0][1] - min_y+0.5) * scale), fill=(0,0,255), width=3)
+							
+							for j in range(1,len(i['route'])):
+								drw.line(((i['route'][j-1][0] - min_x + 0.5) * scale, (i['route'][j-1][1] - min_y+0.5) * scale, (i['route'][j][0] - min_x+0.5) * scale, (i['route'][j][1] - min_y+0.5) * scale), fill=(0,0,255), width=3)
+#							drw.line(((i['position']['x'] - min_x + 0.5) * scale, (i['position']['y'] - min_y+0.5) * scale, (end[0] - min_x+0.5) * scale, (end[1] - min_y+0.5) * scale), fill=(0,0,255), width=5)
 					co = (0,0,255)
 				else:
 					co = (255,0,0)
 					
-				drw.ellipse(((i['position']['x'] - min_x + 0.4) * scale, (i['position']['y'] - min_y + 0.4) * scale, (i['position']['x'] - min_x + 0.6) * scale, (i['position']['y'] - min_y + 0.6) * scale), fill=co) 
+				drw.ellipse(((i['position']['x'] - min_x + 0.3) * scale, (i['position']['y'] - min_y + 0.3) * scale, (i['position']['x'] - min_x + 0.7) * scale, (i['position']['y'] - min_y + 0.7) * scale), fill=co) 
 
 			self.out += "Map saved at map.png. "
 			img.save("map.png")
@@ -91,7 +128,9 @@ class make():
 		
 muds = {
 	"START" : [ "MAKE [MAKE_OPTIONS]" ],
-	"MAKE_OPTIONS" : [ "MAP" ],
+	"MAKE_OPTIONS" : [ "MAP", "MAP WITH [MAP_WITH_OPTIONS]" ],
+	"MAP_WITH_OPTIONS" : [ "[MAP_OPT]", "[MAP_OPT] AND [MAP_OPT]", "[MAP_OPT], [MAP_WITH_OPTIONS]" ],
+	"MAP_OPT" : ["HEAT ZONES", "NO HOUSES"]
 }
 
 cmds = {

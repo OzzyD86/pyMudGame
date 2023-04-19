@@ -1,7 +1,10 @@
 print("Loading dependencies...")
 
 config = {
-	"loaders" : [ "cmds.opts", "cmds.make", "cmds.engine"]
+	"loaders" : [ "cmds.opts", "cmds.make", "cmds.engine"],
+	"core": {
+		"npcpt" : 60
+	}
 }
 import mud, core.mapper
 import core.tickableObject, tickers.doNPCtick
@@ -59,20 +62,22 @@ def doTime(time = 0):
 #e = mud.mud()
 print("Setting up gEngine...")
 ge = core.gEngine.gEngine()
+ge.config = config
 ge.partLoad("mapp", core.mapper.mapper())
 ge.partLoad("mud", mud.mud())
+ge.new(sys.maxsize)
 #ge.load("test.json")
 ge.tickOps.append(Hello)
 ge.tickOps.append(tickers.doNPCtick.doNPCTick)
-ge.new()
 ge.cmds = cmds
-ge.muds = muds
+ge.muds = muds # Is this line superfluous? # Update: Nope
+ge.cmdExec("INITIALISE")
 ge.events = events
+
+#ge.cmdExec('ENGINE GAME LOAD "test"')
 print("Done.")
 
-#ge.partLoad("mud", e)
-
-random.seed(1)
+#random.seed(1)
 transcript = ""
 
 ge.coreRun()
