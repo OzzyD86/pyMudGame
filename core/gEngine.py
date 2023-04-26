@@ -1,6 +1,6 @@
 import json, pickle, pathlib
 import sys, importlib
-import random
+import random, os
 #sys.path.append("../")
 #import mapper
 
@@ -51,6 +51,7 @@ def split_special(string = "", around = " "):
 
 class gEngine():
 	def __init__(self):
+		self.map_data = {}
 		self.cmds = {}
 		self.config = {  }
 		self.events = { "onMove" : [] }	# For example
@@ -60,14 +61,18 @@ class gEngine():
 		#self.new()
 		#self.position = {"x" : 0,"y" : 0 }
 
-	def new(self, seed):
+	def new(self, seed = None):
+		self.map_data = {}
 		self.out = ""
 		self.transcript = ""
 		self.time = 0
 		self.player = [{ "time" : 0, "human" : True, "position": { "x": 0, "y" : 0 }}]
 		for i in self.loaders:
 			getattr(self, i).reset()
-		self.config['seed'] = random.randrange(sys.maxsize)
+		if (seed is None):
+			self.config['seed'] = random.randrange(sys.maxsize)
+		else:
+			self.config['seed'] = seed
 		self.mapp.reset(self.config['seed'])
 		
 	def load(self, name):
@@ -80,6 +85,14 @@ class gEngine():
 		d = open(dir + "/defaults.pkl", "rb")
 		defs = pickle.loads(d.read())
 		d.close()
+		if (os.path.isfile(dir + "/map_data.pkl")):
+			d = open(dir + "/map_data.pkl", "rb")
+			self.map_data = pickle.loads(d.read())
+			d.close()
+		else:
+			self.map_data = {}
+			
+		self.config['save_name'] = name
 		self.config['seed'] = defs['seed']
 		print("Seed is " + str(self.config['seed']))
 		self.mapp.reset(self.config['seed'])
@@ -128,7 +141,12 @@ class gEngine():
 		d.write(op)
 		d.close()
 		d = open(dir + "/defaults.pkl", "wb")
+		self.config['save_name'] = name
 		d.write(pickle.dumps({ "seed" : self.config['seed'] }))
+
+		d = open(dir + "/map_data.pkl", "wb")
+		d.write(pickle.dumps(self.map_data))
+		
 		d.close()
 		
 	def cmdExec(self, cmd = ""):
@@ -156,24 +174,16 @@ class gEngine():
 	def coreRun(self):
 		self.transcript = ""
 		
-		self.mud.load(array_merge(self.muds, {
-			"START" : [  
-				"EXIT", 
-			],
-			"DIRECTION_TRADITIONAL" : [ "UP", "DOWN", "LEFT", "RIGHT" ],
-			"DIRECTION_CLASSIC" : ["NORTH", "EAST", "SOUTH", "WEST" ],
-			"DIRECTION" : [
-				#"[DIRECTION_TRADITIONAL]",
-				"[DIRECTION_CLASSIC]",
-			]
-		}))
-
 		self.data['piq'] = 0 # Spurious hack. Look into this?
 
 #		x = sorted(self.player, key=lambda x: x['time'])
 #		print(x)
 		
 		while True:
+			
+			#for i in self.player:
+			#	
+			#	print(i)
 			
 			x = input("Choose your action: ").upper()
 			o = self.mud.xref(x)
@@ -182,11 +192,12 @@ class gEngine():
 				if (x == "EXIT"):
 					#for i in self.mapp.list_tiles():
 					#	print(i)
-					self.save("test")
-					print(self.transcript)
-					ff = open("transcript.txt", "w")
-					ff.write(self.transcript)
-					ff.close()
+					print("Saving as " + self.config['save_name'] + "...")
+					self.save(self.config['save_name'])
+					#print(self.transcript)
+					#ff = open("transcript.txt", "w")
+					#ff.write(self.transcript)
+					#ff.close()
 					sys.exit(1)
 				else:
 					p = split_special(x, " ")

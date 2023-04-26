@@ -1,12 +1,13 @@
 print("Loading dependencies...")
 
 config = {
-	"loaders" : [ "cmds.opts", "cmds.make", "cmds.engine"],
+	"loaders" : [ "cmds.opts", "cmds.make", "cmds.engine", "cmds.map"],
 	"core": {
-		"npcpt" : 60
+		"npcpt" : 60,
+		"fow_size" : 10
 	}
 }
-import mud, core.mapper
+import mud, core.mapper, core.phraseReplace
 import core.tickableObject, tickers.doNPCtick
 import sys, random
 import json
@@ -65,7 +66,7 @@ ge = core.gEngine.gEngine()
 ge.config = config
 ge.partLoad("mapp", core.mapper.mapper())
 ge.partLoad("mud", mud.mud())
-ge.new(sys.maxsize)
+ge.new()
 #ge.load("test.json")
 ge.tickOps.append(Hello)
 ge.tickOps.append(tickers.doNPCtick.doNPCTick)

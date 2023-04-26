@@ -106,7 +106,7 @@ class mud():
 			for i in f:
 				t.append(i)
 				#print("xref i:",i)
-				if (i[1].find("[") == -1):
+				if (i[1].find("[") == -1):	# This line once errored with a string index out of bounds which I missed/neglected at the time
 					#print(i)
 					found = True
 					return True

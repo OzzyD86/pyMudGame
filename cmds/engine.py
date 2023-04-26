@@ -1,3 +1,5 @@
+import random, sys
+
 class engine():
 	def __init__(self, gEngine, opts):
 		self.out = ""
@@ -19,7 +21,8 @@ class engine():
 				if (len(p) > 3 and p[3] == "AS"):
 					sav = p[4].strip("\"")
 				else:
-					sav = "test"
+					sav = gEngine.config['save_name']
+				self.out += " as " + sav + "."
 				gEngine.save(sav)
 			elif (p[2] in [ "LOAD","OPEN" ]):
 #				try:
@@ -28,7 +31,15 @@ class engine():
 #					print("No. That didn't work")
 #					self.out = ""
 			elif (p[2] == "NEW"):
-				gEngine.new()
+				import sys
+				seed = random.randrange(sys.maxsize)
+#				print(len(p))
+				if (len(p) > 3):
+					print(p[3], p[4])
+					if (p[3] == "WITH" and p[4] == "SEED"):
+						seed = int(p[5])
+				#print(seed)
+				gEngine.new(seed)
 		#elif (p[1] == "TRANSCRIPT"):
 		#	if (p[2] == "SAVE"):
 		#		pass
@@ -44,7 +55,7 @@ class engine():
 		
 muds = {
 	"START" : [ "ENGINE [ENGINE_ACTION]" ],
-	"ENGINE_ACTION" : [ "EXIT", "GAME SAVE", "GAME SAVE AS [%STRING%]", "GAME LOAD [%STRING%]" ],
+	"ENGINE_ACTION" : [ "EXIT", "GAME SAVE", "GAME SAVE AS [%STRING%]", "GAME LOAD [%STRING%]", "GAME NEW", "GAME NEW WITH SEED [%NUMBER%]" ],
 }
 
 cmds = {

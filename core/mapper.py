@@ -1,5 +1,47 @@
 ORTHS = [(0,1), (1,0), (0,-1), (-1, 0)]
 
+import core.phraseReplace
+
+prd = {
+	"start" : [
+		"<%town.pre%><%town.core%><%town.post%><%posts%>",
+		"<%town2.exec%>",
+	],
+	"space": [ "", "-", " " ],
+	"town2" : {
+		"begin" : [ "", "Upper ", "Lower ", "Inner ", "Outer " ],
+		"core1" : [ "Ren", "Ten", "Twin", "Twig", "Hex", "Fox", "Pas"],
+		"core2" : [ "fell", "all", "gle", "gen", "gon", "fall", "nell", "nal", "try"],
+		"exec": [ "<%town2.begin%><%town2.core1%><%town2.core2%>" ]
+	},
+	"town" : {
+		"pre": [
+			"High ", "Low ", "<%positionals%>", ""
+		],
+		"core" : [
+			"fart", "wang", "Slon", "Covid", "Butt", "dive", "fenn", "mole", "fingley", "Ten", "Net", "Fet"
+		],
+		"posts": [
+			"<%town.post%><%posts%>", "<%town.post%>",
+			
+		],
+		"post" : [
+			"ville", "ton", "hole", "wood", "borough"
+		]
+	},
+	"posts" : [
+		"-on-sea", " by <%town2.exec%>", " <%more_positionals.based%> <%town2.exec%>"
+	],
+	"more_positionals" : {
+		"based" : [
+			"over", "under", "juxta", "tween"
+		]
+	},
+	"positionals" : [
+		"Upper", "Lower"
+	]
+}
+
 import random, json, math as maths
 import noise2
 #import noise
@@ -25,19 +67,29 @@ class aStarPartial():
 		return self.search
 
 class mapper():
-	def __init__(self, seed = 1024):
-		self.seed = seed
-		print("Set seed " + str(seed))
-		#self.tiles = {}
-		#self.edge_tiles = [(0,0)]
+	town_tiles = [0, 1, 7]
+	forbid_move = [6]
+	
+	def setNoise(self, seed = 1024):
 		random.seed(seed)
 		self.nm = noise2.noiseMachine()
 		self.nm.buildNoiseBase(128)
 		self.nm.buildNoiseBase(64)
-		self.nm.addScope([0, 5, 0]).addScope([1, 19, 2])
+		self.nm.addScope([0, 3, 1]).addScope([0, 5, 0]).addScope([1, 19, 2]).addScope([1, 29, 0])
 		self.houses = noise2.noiseMachine()
 		self.houses.buildNoiseBase(16)
 		self.houses.addScope([0, 4, 1])
+		self.sea = noise2.noiseMachine()
+		self.sea.buildNoiseBase(32)
+		self.sea.addScope([0, 17, 0])
+	
+	def __init__(self, seed = 1024):
+		self.seed = seed
+		print("Set seed " + str(seed))
+		self.tiles = {}
+		self.edge_tiles = [(0,0)]
+		self.towns = []
+		self.setNoise(seed)
 		#print(self.houses.noise)
 		# Sorted?
 		pass
@@ -45,49 +97,137 @@ class mapper():
 	def reset(self, seed = None):
 		self.tiles = {}
 		self.edge_tiles = [(0,0)]
+		self.towns = []
 		del self.nm
 		del self.houses
-		random.seed(seed)
 		print("Reset seed " + str(seed))
-		self.nm = noise2.noiseMachine()
-		self.nm.buildNoiseBase(128)
-		self.nm.buildNoiseBase(64)
-		self.nm.addScope([0, 5, 0]).addScope([1, 19, 2])
-		self.houses = noise2.noiseMachine()
-		self.houses.buildNoiseBase(16)
-		self.houses.addScope([0, 4, 1])
+		self.setNoise(seed)
 	
-	def get_tile(self, x = 0, y = 0):
+	def get_tile(self, x = 0, y = 0, in_town_mode = False):
 		if ((x,y) in self.tiles):
 			return self.tiles[x,y]
 		else:
-			self.set_tile(x, y)
+			self.set_tile(x, y, in_town_mode = in_town_mode)
 			return self.tiles[x,y]
 			
 #			return False
 			
-	def set_tile(self, x = 0, y = 0, force_edging = True):
+	def set_tile(self, x = 0, y = 0, force_edging = True, in_town_mode = False):
 		z = False
 		if (not (x,y) in self.tiles):
 			np = self.nm.locBuild((x, y))[0,0]
-			print(np)
+			sea = self.sea.locBuild((x, y))[0,0]
+			#print(np)
 			mappo = maths.floor(np / 255 * 5)
 			#mappo = 
 			#print(mappo)
-			self.tiles[x,y] = {"type" : int(mappo), "storage" : random.choice([True, False, False])}
-			if (self.tiles[x,y]['type'] in [0, 1]):
+			self.tiles[x,y] = {"type" : int(mappo), "storage" : random.choice([True, False, False]), "visible" : False }
+			this_tile = self.tiles[x,y]
+			print(sea)
+			if (sea < 64):
+				self.tiles[x,y]['storage'] = False
+				self.tiles[x,y]['type'] = 6
+				print("Make sea tile")
+				if (int(mappo) in [0, 1]):
+					self.tiles[x,y]['type'] = 7
+			
+			if (self.tiles[x,y]['type'] in self.town_tiles): # I DO NOT want this code to run ... yet!
+				if (not "processed" in this_tile and in_town_mode != True):
+					ttypes = {}
+					gen_houses = 0
+					print("Look for a town!")
+					# Set up for town search
+					bounds = [[x, y], [x, y]]
+					searched = [(x,y)]
+					to_search = []
+					for w in ORTHS:
+						v = self.get_tile(x+w[0], y+w[1], in_town_mode = True)
+						print(v)
+						if (v['type'] in self.town_tiles and ("processed" not in v or v['processed'] != True)):
+							to_search.append((x+w[0], y+w[1]))
+					self.tiles[x,y]["processed"] = True
+					if ("house" in this_tile and this_tile['house']):
+						gen_houses += 1
+					
+					#print("TOWN:", to_search)
+					if (True):
+					#try:
+						while (len(to_search) > 0):
+							#print(len(to_search))
+							v = to_search.pop(0)
+							t = self.get_tile(v[0], v[1], in_town_mode = True)
+							if (v not in searched):
+								if (v[0] < bounds[0][0]):
+									bounds[0][0] = v[0]
+								elif (v[0] > bounds[1][0]):
+									bounds[1][0] = v[0]
+
+								if (v[1] < bounds[0][1]):
+									bounds[0][1] = v[1]
+								elif (v[1] > bounds[1][1]):
+									bounds[1][1] = v[1]
+
+								self.tiles[v]['processed'] = True
+									
+
+								if ("house" in self.tiles[v] and self.tiles[v]['house']):
+									gen_houses += 1
+								searched.append(v)
+								for w in ORTHS:
+									u = self.get_tile(v[0]+w[0], v[1]+w[1], in_town_mode = True)
+									#print(u)
+									if ((v[0]+w[0], v[1]+w[1]) not in searched):
+										if not u['type'] in ttypes:
+											ttypes[u['type']] = 1
+										else:
+											ttypes[u['type']] += 1
+										#print(ttypes)
+
+										if (u['type'] in self.town_tiles and ("processed" not in u or u['processed'] != True)):
+											if (u['type'] != t['type'] or True):
+											#print("Add", (v[0]+w[0], v[1]+w[1]))
+												to_search.append((v[0]+w[0], v[1]+w[1]))
+					#except:
+					#	print("Whoops")
+					ran = random.getstate()
+					print(bounds)
+					if (gen_houses > 0):
+						p = ((gen_houses * (bounds[0][0] * bounds[0][1])) + (bounds[1][0] * bounds[1][1])) * len(searched)
+						print(p)
+						random.seed(p)
+						global prd
+						town_name, prd = core.phraseReplace.phraseReplace_v2("<%start%>", prd)
+						print(town_name, "with", gen_houses, "house(s)")
+						self.towns.append([town_name, bounds, p])
+						print("===")
+						print(ttypes)
+						random.setstate(ran)
+					else:
+						print("Sorry. Number of houses not met for city creation :(")
+					#print(bounds)
+					
 				house = self.houses.locBuild((x, y))[0,0]
-				q = maths.floor(house / 255 * ((self.tiles[x,y]['type'] + 1) * 5))
+				q = maths.floor(house / 255 * (10)) # not 12 at the moment
+				an = self.tiles[x,y]['type'] 
 				#q = random.randrange(0, 3)
 				print(q)
-				if (q == 2):
+#				if (q in [9, 10, 11]):
+#					if (q in [10, 11]):
+#						self.tiles[x,y]['type']  = 2
+#					elif (q == 9):
+#						if (an == 0):
+#							self.tiles[x,y]['type']  = 1
+#						else:
+#							self.tiles[x,y]['type']  = 2
+							
+				if ((an == 0 and q in [2, 7]) or (an in [1, 7] and q in [2])):
 					self.tiles[x,y]['house'] = True
 					self.tiles[x,y]['storage'] = True
 					print("Spawned a house!")
-				elif (q == 3 and self.tiles[x,y]['type'] == 0):
+				elif (q == 3 and an == 0):
 					self.tiles[x,y]['shop'] = True
 					print("Spawned a shop!")
-				elif (q == 4 and self.tiles[x,y]['type'] == 0):
+				elif (q == 8 and an == 0):
 					self.tiles[x,y]['station'] = True
 					print("Spawned a station!")
 				else:
@@ -128,7 +268,7 @@ class mapper():
 		k1 = [str(i) for i in k]
 		x = json.dumps(dict(zip(*[k1,v]))) 
 		
-		return json.dumps({ "tiles" : x, "edges" : self.edge_tiles })
+		return json.dumps({ "tiles" : x, "edges" : self.edge_tiles, "towns" : self.towns })
 	
 	def raw_load(self, data):
 		#print(data)
@@ -136,6 +276,9 @@ class mapper():
 		#data = json.load(f)
 		dic = json.loads(data)
 		self.edge_tiles = dic['edges']
+		if ("towns" in dic):
+			self.towns = dic['towns']
+		
 		dic = json.loads(dic['tiles'])
 
 #		print(dic)
@@ -185,7 +328,7 @@ class mapper():
 				for j in ORTHS:
 					tr = (i['current'][0] + j[0], i['current'][1] + j[1])
 					if not (tr in tried_squares):
-						if (tr in self.tiles):
+						if (tr in self.tiles and self.tiles[tr]['type'] not in self.forbid_move):
 							rtdt = abs(tr[0] - finish[0]) + abs(tr[1] - finish[1])
 							if (rtdt == 0):
 								#print(start)

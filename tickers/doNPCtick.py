@@ -94,7 +94,7 @@ class doNPCTick(core.tickableObject.tickableObject):
 					i['mode'] = "frolick"
 					# Just frollick
 					for j in [(0,1), (1, 0), (0,-1), (-1, 0)]:
-						if ((i['position']['x'] + j[0], i['position']['y'] + j[1]) in self.gEngine.mapp.tiles):
+						if ((i['position']['x'] + j[0], i['position']['y'] + j[1]) in self.gEngine.mapp.tiles and self.gEngine.mapp.tiles[(i['position']['x'] + j[0], i['position']['y'] + j[1])]['type'] not in self.gEngine.mapp.forbid_move):
 							via.append((i['position']['x'] + j[0], i['position']['y'] + j[1]))
 					
 					if (len(via) > 0):
@@ -106,23 +106,23 @@ class doNPCTick(core.tickableObject.tickableObject):
 			#else:
 			#	print("NPC waiting...")
 		ti = len(self.gEngine.mapp.tiles)
-		print(str(ti) + " tile(s) should spawn " + str(ti // self.gEngine.config['core']['npcpt']) + " NPCs, and there are " + str(c))
+		#print(str(ti) + " tile(s) should spawn " + str(ti // self.gEngine.config['core']['npcpt']) + " NPCs, and there are " + str(c))
 		spw = (ti // self.gEngine.config['core']['npcpt']) - c
 		if (spw < 0): spw = 0
-		print("Spawn " + str(spw) + " more!")
+		#print("Spawn " + str(spw) + " more!")
 		
 		for i in range(spw):
-			print("Spawning NPC " + str(i + 1) + "...")
+			#print("Spawning NPC " + str(i + 1) + "...")
 			x = random.choice(self.gEngine.mapp.edge_tiles)
-			print("try", x, "?")
+			#print("try", x, "?")
 			via = []
 			for j in [(0,1), (1, 0), (-1, 0), (0, -1)]:
 				v = (x[0] + j[0], x[1] + j[1])
-				if (v in self.gEngine.mapp.tiles):
+				if (v in self.gEngine.mapp.tiles and self.gEngine.mapp.tiles[v]['type'] not in self.gEngine.mapp.forbid_move):
 					via.append(v)
-					print(v, "is viable.")
+					#print(v, "is viable.")
 			
 			if (len(via) > 0):
 				w = random.choice(via)
-				print("Spawn at " + str(w) + "?")
+				#print("Spawn at " + str(w) + "?")
 				self.gEngine.player.append({ "position" : { "x" : w[0], "y": w[1] }, "time" : self.gEngine.time, "human" : False, "nature" : random.choice(["chaser", "chaser", "shouter"]), "mode" : "frolick", "data": {} })

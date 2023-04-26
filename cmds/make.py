@@ -1,4 +1,4 @@
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 import math as maths
 
 def marker(img, loc = (0,0)):
@@ -8,6 +8,8 @@ class make():
 	def __init__(self, gEngine, opts):
 		self.out = ""
 		heatmap = False
+		fog = True
+		viz = False
 		houses = True
 		p = opts#.split(" ")
 		if (p[1] == "MAP"):
@@ -23,28 +25,38 @@ class make():
 						elif(nx[0] == "NO" and nx[1] in ["HOUSES", "HOUSES,"]):
 							nx = nx[2:]
 							houses = False
+						elif(nx[0] == "NO" and nx[1] == "FOG" and nx[2] == "OF" and nx[3] in ["WAR", "WAR,"]):
+							nx = nx[4:]
+							fog = False
+						elif(nx[0] == "ALL" and nx[1] == "SQUARES" and nx[2] in ["VISIBLE", "VISIBLE,"]):
+							nx = nx[3:]
+							viz = True
 						else:
 							nx = nx[1:]
 						
 			img = Image.new("RGB", (1960, 1080))
 			img_overlay = Image.new("RGBA", (1960, 1080), (0,0,0,0))
-			min_x = 0
-			min_y = 0
-			max_x = 0
-			max_y = 0
+			fow = Image.new("RGBA", (1960, 1080), (0,0,0,0))
+			min_x = None
+			min_y = None
+			max_x = None
+			max_y = None
 			for i in gEngine.mapp.tiles.keys():
-				if (i[0] < min_x):
-					min_x = i[0]
-				elif (i[0] > max_x):
-					max_x = i[0]
+				if ("visible" in gEngine.mapp.tiles[i] and gEngine.mapp.tiles[i]['visible'] == True) or (viz == True):
+					if (min_x is None or i[0] < min_x):
+						min_x = i[0]
+					elif (max_x is None or  i[0] > max_x):
+						max_x = i[0]
 
-				if (i[1] < min_y):
-					min_y = i[1]
-				elif (i[1] > max_y):
-					max_y = i[1]
+					if (min_y is None or i[1] < min_y):
+						min_y = i[1]
+					elif (max_y is None or i[1] > max_y):
+						max_y = i[1]
+				elif ("visible" not in gEngine.mapp.tiles[i]):
+					gEngine.mapp.tiles[i]['visible'] = False
 					
 				#print(i)
-			cols = [(255,255,255),(192, 255, 192), (0,255,0), (0, 127, 0), (0, 64, 0), (127,127,127)]
+			cols = [(255,255,255),(192, 255, 192), (0,255,0), (0, 127, 0), (0, 64, 0), (127, 127, 127), (64,64,255), (255, 127, 0)]
 			print(min_x, max_x, min_y, max_y)
 			min_scale_x = 1960 / (max_x - min_x + 1)
 			min_scale_y = 1080 / (max_y - min_y + 1)
@@ -62,25 +74,31 @@ class make():
 							if (gEngine.mapp.tiles[i,j]['sightings'] > max_sight):
 								max_sight = gEngine.mapp.tiles[i,j]['sightings']
 						pass
-
+			fowdrw = ImageDraw.Draw(fow)
 			for i in range(min_x, max_x+2):
 				for j in range(min_y, max_y+2):
-					if ((i,j) in gEngine.mapp.tiles.keys()):
+					#p = gEngine.mapp.get_tile(i, j)
+					if ((i,j) in gEngine.mapp.tiles.keys() and (gEngine.mapp.tiles[(i,j)]['visible'] == True or viz == True)):
 						#print("Yes - ", (i,j))
+						#print (gEngine.player[gEngine.data['piq']])
+						xo = abs(gEngine.player[gEngine.data['piq']]['position']['x'] - i) + abs(gEngine.player[gEngine.data['piq']]['position']['y'] - j)
+						if (xo > gEngine.config['core']['fow_size']):
+							fowdrw.rectangle(((i - min_x) * scale, (j - min_y) * scale, (i - min_x + 1) * scale, (j - min_y + 1) * scale), fill=(0,0,0,255))
+
 						drw.rectangle(((i - min_x) * scale, (j - min_y) * scale, (i - min_x + 1) * scale, (j - min_y + 1) * scale), fill=cols[gEngine.mapp.tiles[i,j]['type'] % len(cols)])
 						
 						if ("sightings" in gEngine.mapp.tiles[i,j]):
 							ol.rectangle(((i - min_x) * scale, (j - min_y) * scale, (i - min_x + 1) * scale, (j - min_y + 1) * scale), fill=(255,0,0,int(gEngine.mapp.tiles[i,j]['sightings'] / max_sight * 255)))
 							
-						if (houses and gEngine.mapp.tiles[i,j]['type'] in [0, 1]) and ("house" in gEngine.mapp.tiles[i,j]) and (gEngine.mapp.tiles[i,j]['house'] == True):
+						if (houses and gEngine.mapp.tiles[i,j]['type'] in [0, 1, 7]) and ("house" in gEngine.mapp.tiles[i,j]) and (gEngine.mapp.tiles[i,j]['house'] == True):
 							drw.ellipse(((i - min_x + 0.2) * scale, (j - min_y + 0.2) * scale, (i - min_x + 0.8) * scale, (j - min_y + 0.8) * scale), fill=(255,0,0)) 
 							drw.ellipse(((i - min_x + 0.3) * scale, (j - min_y + 0.3) * scale, (i - min_x + 0.7) * scale, (j - min_y + 0.7) * scale), fill=(127,127,0))
 
-						if (houses and gEngine.mapp.tiles[i,j]['type'] in [0, 1]) and ("station" in gEngine.mapp.tiles[i,j]) and (gEngine.mapp.tiles[i,j]['station'] == True):
+						if (houses and gEngine.mapp.tiles[i,j]['type'] in [0, 1, 7]) and ("station" in gEngine.mapp.tiles[i,j]) and (gEngine.mapp.tiles[i,j]['station'] == True):
 							drw.ellipse(((i - min_x + 0.3) * scale, (j - min_y + 0.3) * scale, (i - min_x + 0.7) * scale, (j - min_y + 0.7) * scale), fill=(127,127,255)) 
 							drw.ellipse(((i - min_x + 0.4) * scale, (j - min_y + 0.4) * scale, (i - min_x + 0.6) * scale, (j - min_y + 0.6) * scale), fill=(0,0,127))
 
-						if (houses and gEngine.mapp.tiles[i,j]['type'] in [0, 1]) and ("shop" in gEngine.mapp.tiles[i,j]) and (gEngine.mapp.tiles[i,j]['shop'] == True):
+						if (houses and gEngine.mapp.tiles[i,j]['type'] in [0, 1, 7]) and ("shop" in gEngine.mapp.tiles[i,j]) and (gEngine.mapp.tiles[i,j]['shop'] == True):
 							drw.ellipse(((i - min_x + 0.3) * scale, (j - min_y + 0.3) * scale, (i - min_x + 0.7) * scale, (j - min_y + 0.7) * scale), fill=(127,255,127)) 
 							drw.ellipse(((i - min_x + 0.4) * scale, (j - min_y + 0.4) * scale, (i - min_x + 0.6) * scale, (j - min_y + 0.6) * scale), fill=(0,127,0))
 
@@ -88,13 +106,25 @@ class make():
 						#	drw.rectangle(((i - min_x + 0.3) * scale, (j - min_y + 0.3) * scale, (i - min_x +  0.7) * scale, (j - min_y + 0.7) * scale), outline=(63,127,0))
 							
 					else:
-						#print("No - ", (i,j))
-						pass
+						#drw.rectangle(((i - min_x) * scale, (j - min_y) * scale, (i - min_x + 1) * scale - 1, (j - min_y + 1) * scale - 1), fill=(0,0,0))
+						fowdrw.rectangle(((i - min_x) * scale, (j - min_y) * scale, (i - min_x + 1) * scale, (j - min_y + 1) * scale), fill=(0,0,0,255))
 						
  #			drw.circle((gEngine.player[0]
 		#	drw.ellipse(((gEngine.position['x'] - min_x + 0.4) * scale, (gEngine.position['y'] - min_y + 0.4) * scale, (gEngine.position['x'] - min_x + 0.6) * scale, (gEngine.position['y'] - min_y + 0.6) * scale), fill=(255,0,0)) 
 			if (heatmap):
 				img.paste(img_overlay, (0,0), img_overlay)
+
+			fog_img = img.copy()
+			ft = ImageFont.truetype("core/arial.ttf", 14)			
+			
+			for i in gEngine.mapp.towns:
+				drw.text(((i[1][0][0] - min_x) * scale + 3, (i[1][0][1] - min_y) * scale + 3), i[0], (0, 0, 0), font=ft)
+				drw.text(((i[1][0][0] - min_x) * scale + 2, (i[1][0][1] - min_y) * scale + 2), i[0], (255, 255, 255), font=ft)
+				drw.rectangle(((i[1][0][0] - min_x) * scale, (i[1][0][1] - min_y) * scale, (i[1][1][0] + 1 - min_x) * scale, (i[1][1][1] + 1 - min_y) * scale), outline=(255,0,0))
+				print(i)
+
+						
+						
 			for i in gEngine.player:
 				if (i['human'] == False):
 					#print(i)
@@ -114,6 +144,18 @@ class make():
 				drw.ellipse(((i['position']['x'] - min_x + 0.3) * scale, (i['position']['y'] - min_y + 0.3) * scale, (i['position']['x'] - min_x + 0.7) * scale, (i['position']['y'] - min_y + 0.7) * scale), fill=co) 
 
 			self.out += "Map saved at map.png. "
+
+			if (fog):
+				img.paste(fog_img.convert("L"), (0,0), fow)
+
+			if ("players" in  gEngine.map_data and gEngine.data['piq'] in gEngine.map_data["players"]):
+				if ("map_points" in gEngine.map_data["players"][gEngine.data['piq']]):
+					for j in gEngine.map_data["players"][gEngine.data['piq']]['map_points']:
+						#print(j)
+						
+						drw.text(((j['location'][0] - min_x + 0.8) * scale, ((j['location'][1] - min_y + 0.5) * scale) -7), j['label'],(255,255,255),font=ft)
+						drw.ellipse(((j['location'][0] - min_x + 0.3) * scale, (j['location'][1] - min_y + 0.3) * scale, (j['location'][0] - min_x + 0.7) * scale, (j['location'][1] - min_y + 0.7) * scale), fill=(255,0,255))
+
 			img.save("map.png")
 			pass
 			
@@ -124,13 +166,13 @@ class make():
 		return 0
 	
 	def describe(self):
-		return ""
+		return self.out
 		
 muds = {
 	"START" : [ "MAKE [MAKE_OPTIONS]" ],
 	"MAKE_OPTIONS" : [ "MAP", "MAP WITH [MAP_WITH_OPTIONS]" ],
 	"MAP_WITH_OPTIONS" : [ "[MAP_OPT]", "[MAP_OPT] AND [MAP_OPT]", "[MAP_OPT], [MAP_WITH_OPTIONS]" ],
-	"MAP_OPT" : ["HEAT ZONES", "NO HOUSES"]
+	"MAP_OPT" : ["HEAT ZONES", "NO HOUSES", "NO FOG OF WAR", "ALL SQUARES VISIBLE"]
 }
 
 cmds = {
