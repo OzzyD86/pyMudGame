@@ -1,6 +1,7 @@
 class head():
 	def __init__(self, gEngine, opts):
 		self.out = ""
+		self.tm = 1
 		self.ge = gEngine
 		p = opts#.split(" ")
 		pl = gEngine.player[gEngine.data['piq']]
@@ -57,17 +58,20 @@ class head():
 		#out = ""
 		return self.out
 
-def evtMove(gEngine):
-	return ""
+#def evtMove(gEngine):
+#	return ""
 	
 muds = {
-	"START" : [ "HEAD [DIRECTION]" ]
+	"WAYS_I_SPELL_HEAD" : [ "HEAD", "HAED", "EHAD" ],
+	"START" : [ "[WAYS_I_SPELL_HEAD] [DIRECTION_CLASSIC]"]
 }
 
 cmds = {
-	"HEAD" : [ "cmds.opts", "head" ],
+	"HEAD" :  head,
+	"EHAD" :  head,
+	"HAED" :  head, # For those like me who  type too fast and get annoyed by it!
 }
 
 events = {
-	"onMove" : [ evtMove ]
+#	"onMove"
 }

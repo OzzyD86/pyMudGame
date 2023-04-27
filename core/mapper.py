@@ -3,6 +3,11 @@ ORTHS = [(0,1), (1,0), (0,-1), (-1, 0)]
 import core.phraseReplace
 
 prd = {
+	"types" : {
+		"landlocked" : [ "The land town of " ],
+		"seaside" : [ "The seaside town of ", "Port " ],
+		"oceanic" : [ "The ocean town of ", "The port town of ", "Mer-" ]
+	},
 	"start" : [
 		"<%town.pre%><%town.core%><%town.post%><%posts%>",
 		"<%town2.exec%>",
@@ -10,13 +15,13 @@ prd = {
 	"space": [ "", "-", " " ],
 	"town2" : {
 		"begin" : [ "", "Upper ", "Lower ", "Inner ", "Outer " ],
-		"core1" : [ "Ren", "Ten", "Twin", "Twig", "Hex", "Fox", "Pas"],
-		"core2" : [ "fell", "all", "gle", "gen", "gon", "fall", "nell", "nal", "try"],
+		"core1" : [ "Ren", "Ten", "Twin", "Twig", "Hex", "Fox", "Pas", "San", "Sand", "Mer", "Rin", "Crop", "Mil", "Milk", "Otter"],
+		"core2" : [ "fell", "all", "gle", "gen", "gon", "fall", "nell", "nal", "try", "wick", "wich", "maid", "well", "wall"],
 		"exec": [ "<%town2.begin%><%town2.core1%><%town2.core2%>" ]
 	},
 	"town" : {
 		"pre": [
-			"High ", "Low ", "<%positionals%>", ""
+			"High ", "Low ", "<%positionals%> ", ""
 		],
 		"core" : [
 			"fart", "wang", "Slon", "Covid", "Butt", "dive", "fenn", "mole", "fingley", "Ten", "Net", "Fet"
@@ -69,6 +74,10 @@ class aStarPartial():
 class mapper():
 	town_tiles = [0, 1, 7]
 	forbid_move = [6]
+	tile_types = {
+		"land" : [0, 1, 2, 3],
+		"ocean" : [6, 7]
+	}
 	
 	def setNoise(self, seed = 1024):
 		random.seed(seed)
@@ -194,9 +203,35 @@ class mapper():
 					if (gen_houses > 0):
 						p = ((gen_houses * (bounds[0][0] * bounds[0][1])) + (bounds[1][0] * bounds[1][1])) * len(searched)
 						print(p)
+						op = { "town" : { "ocean": 0, "land" : 0 }, "surround" : { "ocean" : 0, "land" : 0 }}
+						for ab, bc in ttypes.items():
+							if (ab in self.town_tiles):
+								if (ab in self.tile_types['land']):
+									op['town']['land'] += bc
+								else:
+									op['town']['ocean'] += bc
+							else:
+								if (ab in self.tile_types['land']):
+									op['surround']['land'] += bc
+								else:
+									op['surround']['ocean'] += bc
+								
+							#print(ab, bc)
+						print(op)
+						water = op['town']['ocean'] + op['surround']['ocean']
+						land = op['town']['land'] + op['surround']['land']
+						wateriness = water / (land + water)
+						print("WATERINESS:", wateriness)
+						
+						if (wateriness > 0.5):
+							tp = "oceanic"
+						elif (wateriness > 0.2):
+							tp = "seaside"
+						else:
+							tp = "landlocked"
 						random.seed(p)
 						global prd
-						town_name, prd = core.phraseReplace.phraseReplace_v2("<%start%>", prd)
+						town_name, prd = core.phraseReplace.phraseReplace_v2("<%types." + tp + "%><%start%>", prd)
 						print(town_name, "with", gen_houses, "house(s)")
 						self.towns.append([town_name, bounds, p])
 						print("===")

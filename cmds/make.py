@@ -28,7 +28,7 @@ class make():
 						elif(nx[0] == "NO" and nx[1] == "FOG" and nx[2] == "OF" and nx[3] in ["WAR", "WAR,"]):
 							nx = nx[4:]
 							fog = False
-						elif(nx[0] == "ALL" and nx[1] == "SQUARES" and nx[2] in ["VISIBLE", "VISIBLE,"]):
+						elif(nx[0] == "ALL" and nx[1] in ["SQUARES", "TILES"] and nx[2] in ["VISIBLE", "VISIBLE,"]):
 							nx = nx[3:]
 							viz = True
 						else:
@@ -121,9 +121,7 @@ class make():
 				drw.text(((i[1][0][0] - min_x) * scale + 3, (i[1][0][1] - min_y) * scale + 3), i[0], (0, 0, 0), font=ft)
 				drw.text(((i[1][0][0] - min_x) * scale + 2, (i[1][0][1] - min_y) * scale + 2), i[0], (255, 255, 255), font=ft)
 				drw.rectangle(((i[1][0][0] - min_x) * scale, (i[1][0][1] - min_y) * scale, (i[1][1][0] + 1 - min_x) * scale, (i[1][1][1] + 1 - min_y) * scale), outline=(255,0,0))
-				print(i)
-
-						
+				#print(i)
 						
 			for i in gEngine.player:
 				if (i['human'] == False):
@@ -172,7 +170,8 @@ muds = {
 	"START" : [ "MAKE [MAKE_OPTIONS]" ],
 	"MAKE_OPTIONS" : [ "MAP", "MAP WITH [MAP_WITH_OPTIONS]" ],
 	"MAP_WITH_OPTIONS" : [ "[MAP_OPT]", "[MAP_OPT] AND [MAP_OPT]", "[MAP_OPT], [MAP_WITH_OPTIONS]" ],
-	"MAP_OPT" : ["HEAT ZONES", "NO HOUSES", "NO FOG OF WAR", "ALL SQUARES VISIBLE"]
+	"MAP_OPT" : ["HEAT ZONES", "NO HOUSES", "NO FOG OF WAR", "ALL [NAMES_FOR_TILES] VISIBLE"],
+	"NAMES_FOR_TILES" : [ "SQUARES", "TILES" ]
 }
 
 cmds = {

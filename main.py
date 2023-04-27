@@ -1,7 +1,7 @@
 print("Loading dependencies...")
 
 config = {
-	"loaders" : [ "cmds.opts", "cmds.make", "cmds.engine", "cmds.map"],
+	"loaders" : [ "cmds.opts", "cmds.make", "cmds.engine" ],
 	"core": {
 		"npcpt" : 60,
 		"fow_size" : 10
@@ -13,14 +13,20 @@ import sys, random
 import json
 import core.gEngine
 import importlib
+import core.quest
 
 from core.gEngine import array_merge
 
+import plugins
+#from quests.basic import basicQuest
+
+print(plugins.INS)
+
 print("Done.")
 
-muds = {}
-cmds = {}
-events = {}
+muds = plugins.INS['cmds']['muds']
+cmds = plugins.INS['cmds']['cmds']
+events = plugins.INS['events']
 
 class Hello(core.tickableObject.tickableObject):
 	def runTick(self):
@@ -52,9 +58,13 @@ print("Done.")
 
 def doTime(time = 0):
 	out = ""
-	if (time >= 60):
-		h = time // 60
-		out += str(h) + "h, "
+
+	d = time // 3600
+	out += str(d + 1) + "d, "
+
+	#if (time >= 60):
+	h = (time // 60) % 24
+	out += str(h) + "h, "
 
 	m = time % 60
 	out += str(m) + "m"

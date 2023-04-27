@@ -9,7 +9,6 @@ def array_merge(a, b, path = None):
 	
 	for key in b:
 		if (key in a):
-			pass
 			if isinstance(a[key], dict) and isinstance(b[key], dict):
 				a[key] = array_merge(a[key], b[key])
 			elif isinstance(a[key], list) and isinstance(b[key], list):
@@ -20,6 +19,9 @@ def array_merge(a, b, path = None):
 			else:
 				a[key] = b[key]
 		else:
+			if (type(a) == list):
+				a = dict(a)
+				#print(type(b), type(a), key)
 			a[key] = b[key]
 		#print(key)
 	return a
@@ -203,10 +205,18 @@ class gEngine():
 					p = split_special(x, " ")
 					#print(p)
 					#p = x.split(" ")
-					foo = importlib.import_module(self.cmds[p[0]][0])
-					#foo = __import__(self.cmds[p[0]][0])
-					r = getattr(foo, self.cmds[p[0]][1])
+					#print(self.cmds[p[0]])
+					if (isinstance(self.cmds[p[0]], list)):
+						#print("Yes")
+						foo = importlib.import_module(self.cmds[p[0]][0])
+						r = getattr(foo, self.cmds[p[0]][1])
+					else:
+						r = self.cmds[p[0]]
+						#print(self.cmds[p[0]])
+						#print("no")
+						
 					a = r(self, p)
+					#print(a)
 					self.player[self.data['piq']]['time'] += a.pushTime()
 					while (self.player[0]['time'] > self.time):
 						self.tick()

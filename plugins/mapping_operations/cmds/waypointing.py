@@ -46,7 +46,11 @@ class mapCmd():
 				w_name = opts[3]
 				print("Waypoint name: ", w_name)
 				
-				loc = (int(opts[6].strip(",(")), int(opts[7].strip(")")))
+				print(opts[4])
+				if (opts[4] == "AT"):
+					loc = (int(opts[6].strip(",(")), int(opts[7].strip(")")))
+				elif (opts[4] == "HERE"):
+					loc = tuple(gEngine.player[gEngine.data['piq']]['position'].values())
 				print("Location:", loc)
 				
 				gEngine.map_data['players'][gEngine.data['piq']]['map_points'].append({ "location" : loc, "label" : w_name})
@@ -66,5 +70,10 @@ muds = {
 }
 
 cmds = {
-	"MAP" : [ "cmds.map", "mapCmd" ],
+	"MAP" : mapCmd ,
+}
+
+MANIFEST = {
+	"muds" : muds,
+	"cmds" : cmds
 }
