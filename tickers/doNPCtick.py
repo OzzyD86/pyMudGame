@@ -19,7 +19,7 @@ class doNPCTick(core.tickableObject.tickableObject):
 				ra = (abs(i['position']['x'] - pl['position']['x'])) + abs((i['position']['y'] - pl['position']['y']))
 				#print(ra)
 				if (ra <= 7):
-					self.out += "An NPC is within detectable range of the player. "
+					self.out += self.gEngine.say("<%NPC.sighted%>") #"An NPC is within detectable range of the player. "
 					if (True):
 						pt = self.gEngine.mapp.tiles[i['position']['x'], i['position']['y']]
 						if ("sightings" in pt):
@@ -27,7 +27,7 @@ class doNPCTick(core.tickableObject.tickableObject):
 						else:
 							pt['sightings'] = 1
 							
-						print("ALERT: ", self.gEngine.mapp.tiles[i['position']['x'], i['position']['y']])
+						#print("ALERT: ", self.gEngine.mapp.tiles[i['position']['x'], i['position']['y']])
 						if (i['nature'] == "chaser"):
 							self.out += "They start to follow. "
 							a = self.gEngine.mapp.aStarSearch((i['position']['x'], i['position']['y']), (pl['position']['x'], pl['position']['y']))
@@ -38,7 +38,7 @@ class doNPCTick(core.tickableObject.tickableObject):
 								i['data'] = { "location" : pl['position'] }
 							elif (isinstance(a, core.mapper.aStarPartial)):
 								i['route'] = a
-							print("Path obj: ", a)
+							#print("Path obj: ", a)
 						elif (i['nature'] == "shouter"):
 							self.out += "They shout. "
 							p = 0
@@ -47,7 +47,7 @@ class doNPCTick(core.tickableObject.tickableObject):
 									
 									ra = (abs(i['position']['x'] - j['position']['x'])) + abs((i['position']['y'] - j['position']['y']))
 									if (ra <= 15 and j['mode'] != "chase"):
-										print(j)
+										#print(j)
 										p += 1
 										a = self.gEngine.mapp.aStarSearch((j['position']['x'], j['position']['y']), (i['position']['x'], i['position']['y']))
 										if (isinstance(a, core.mapper.aStarComplete)):
@@ -58,7 +58,7 @@ class doNPCTick(core.tickableObject.tickableObject):
 										elif (isinstance(a, core.mapper.aStarPartial)):
 											j['route'] = a
 #										j['route'] = a.copy()
-										print(j)
+										#print(j)
 									#sys.exit(1)
 							if (p > 0):
 								self.out += str(p) + " more people are alerted! "

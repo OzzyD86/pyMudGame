@@ -10,7 +10,7 @@ INS = { "quests" : [] }
 local = "/".join(__file__.split("\\")[:-1])
 
 for y in ["quests", "cmds", "narration", "events"]:
-	if (y in ["cmds"]):
+	if (y in ["cmds", "narration", "events"]):
 		INS[y] = {}
 	else:
 		INS[y] = []
@@ -23,7 +23,10 @@ for y in ["quests", "cmds", "narration", "events"]:
 				if (i != "__pycache__"):
 					z = importlib.import_module(imp + "." + y + "." + i.split(".")[0])
 					if (hasattr(z, "MANIFEST")):
-						INS[y] = array_merge(INS[y], z.MANIFEST)
+						if (y not in ["cmds", "narration", "events"]):
+							INS[y] += z.MANIFEST
+						else:
+							INS[y] = array_merge(INS[y], z.MANIFEST)	#	 Was +=
 				
 			#y = importlib.import_module(imp + "." + y)
 	#else:

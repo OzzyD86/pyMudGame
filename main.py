@@ -58,8 +58,7 @@ print("Done.")
 
 def doTime(time = 0):
 	out = ""
-
-	d = time // 3600
+	d = time // 1440
 	out += str(d + 1) + "d, "
 
 	#if (time >= 60):
@@ -75,12 +74,15 @@ print("Setting up gEngine...")
 ge = core.gEngine.gEngine()
 ge.config = config
 ge.partLoad("mapp", core.mapper.mapper())
+ge.mapp.passTownNames(plugins.INS['narration'])
 ge.partLoad("mud", mud.mud())
 ge.new()
 #ge.load("test.json")
 ge.tickOps.append(Hello)
 ge.tickOps.append(tickers.doNPCtick.doNPCTick)
+ge.narration = plugins.INS['narration']
 ge.cmds = cmds
+ge.quests = plugins.INS['quests']
 ge.muds = muds # Is this line superfluous? # Update: Nope
 ge.cmdExec("INITIALISE")
 ge.events = events

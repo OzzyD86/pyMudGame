@@ -34,12 +34,23 @@ class engine():
 				import sys
 				seed = random.randrange(sys.maxsize)
 #				print(len(p))
-				if (len(p) > 3):
-					print(p[3], p[4])
-					if (p[3] == "WITH" and p[4] == "SEED"):
-						seed = int(p[5])
+				print(p[3:])
+				p = p[3:]
+				while (len(p) > 0):
+					print(p)
+					if (p[0] == "WITH" and p[1] == "SEED"):
+						seed = int(p[2])
+						p = p[3:]
+					if (p[0] == "AS"):
+						nm = str(p[1])
+						gEngine.config['save_name'] = nm
+						p = p[2:]
+					else:
+						p = p[1:]
 				#print(seed)
+				
 				gEngine.new(seed)
+				gEngine.save(nm)
 		#elif (p[1] == "TRANSCRIPT"):
 		#	if (p[2] == "SAVE"):
 		#		pass
@@ -55,7 +66,9 @@ class engine():
 		
 muds = {
 	"START" : [ "ENGINE [ENGINE_ACTION]" ],
-	"ENGINE_ACTION" : [ "EXIT", "GAME SAVE", "GAME SAVE AS [%STRING%]", "GAME LOAD [%STRING%]", "GAME NEW", "GAME NEW WITH SEED [%NUMBER%]" ],
+	"ENGINE_ACTION" : [ "EXIT", "GAME SAVE", "GAME SAVE AS [%STRING%]", "GAME LOAD [%STRING%]", "GAME NEW AS [%STRING%]", "GAME NEW [NEW_GAME_OPTS]" ],
+	"GLIST" : [ "[NEW_GAME_OPTS]", "[NEW_GAME_OPTS] AND [NEW_GAME_OPTS]", "[NEW_GAME_OPTS], [GLIST]" ],
+	"NEW_GAME_OPTS": [ "WITH SEED [%NUMBER%]", "AS [%STRING%]"], 
 }
 
 cmds = {

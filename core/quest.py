@@ -1,7 +1,8 @@
 class quest():
 	def __init__(self, gEngine, opts):
 		# This will be called at the beginning ... I mean ... obviously!
-		self.engine = gEnigne
+		self.internal_state = None
+		self.engine = gEngine
 		self.opts = opts
 		# Glad we got that out of the way!
 		
@@ -11,25 +12,35 @@ class quest():
 		
 		# I'm not imagining that this will need to be altered when complete?
 		
-		if (len(opts) > 3):
-			if (opts[3] in ["ACCEPT", "DECLINE", "COMPLETE"]):
-				action = opts[3]
-		elif (len(opts) > 2):
-			if (opts[2] in ["ACCEPT", "DECLINE", "COMPLETE"]):
-				action = opts[2]
+		self.state(opts)
+		
+	def state(self, opts):
+		# Basically, once the system has started, this will be the way we interact with the class from the top, but for now
+		print(opts)
+		if (len(opts) > 3 and opts[3] in ["ACCEPT", "DECLINE", "COMPLETE"]):
+			action = opts[3]
+		elif (len(opts) > 2 and opts[2] in ["ACCEPT", "DECLINE", "COMPLETE"]):
+			action = opts[2]
 		else:
 			action = "INIT"
 		
 		if (action == "ACCEPT"):
-			self._accept()
+			if (self._accept()):
+				self.internal_state = "ACCEPTED"
 		elif (action == "DECLINE"):
-			self._decline()
+			if (self._decline()):
+				self.internal_state = "DECLINED"
 		elif (action == "COMPLETE"):
-			self._complete()
+			if (self._complete()):
+				self.internal_state = "COMPLETED"
 		else:
-			self._begin()
+			if (self._begin()):
+				self.internal_state = "INITIALISED"
+			
+
+		return self
 		
-	def _citeria_met(self):
+	def _criteria_met(self):
 		return False
 		
 	def _begin(self):
@@ -52,23 +63,42 @@ class quest():
 		return ""
 		
 	def _accept(self):
-		active = False
-		if (active == False):
+		if (self.internal_state in ["COMPLETED", "DECLINED"]):
+			self.out = "It's no longer important"
+			return False
+			
+		if (self.internal_state == "INITIALISED"):
 			self.out = "That's wonderful"
-			active = True
+			return True
 		else:
 			self.out = "Yes yes. I heard you say you're going to do it"
-	
+			return False
+			
 	def _decline(self):
-		pass
+			if (self.internal_state == "DECLINED"):
+				self.out = "Begone!"
+				return False
+				
+			self.out = "Oh :("
+			return True
 		
 	def _complete(self):
 		# Work out if the criteria for the task have been met
+		if (self.internal_state is None):
+			self.out = "Hold on! You don't know what I'm asking yet!!"
+			return False
+			
+		if (self.internal_state == "DECLINED"):
+			self.out = "No, no. You've had your chance!"
+			return False
+			
 		if (self._criteria_met()):
 			self.out = "Wonderful! Here's your reward"
+			return True
 			# Issue reward, clear quest, clean up
 		else:
 			self.out = "Hold up! Finish the quest first, please!"
+			return False
 	
 	def describe(self):
 		return self.out

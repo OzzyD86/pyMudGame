@@ -1,6 +1,8 @@
 import json, pickle, pathlib
 import sys, importlib
 import random, os
+import core.phraseReplace
+
 #sys.path.append("../")
 #import mapper
 
@@ -46,6 +48,10 @@ def split_special(string = "", around = " "):
 	for i in expl_in:
 		if (i == "%%"):
 			expl_out.append(exp.pop(0))
+		elif (i[:2] == "%%"):
+			expl_out.append(exp.pop(0) + i[2:])
+		elif (i.find("%%") > -1):
+			expl_out.append(i[:i.find("%%")] + exp.pop(0) + i[i.find("%%")+2:])	# Or something like that
 		else:
 			expl_out.append(i)
 	
@@ -63,6 +69,11 @@ class gEngine():
 		#self.new()
 		#self.position = {"x" : 0,"y" : 0 }
 
+	def say(self, text = ""):
+		#print(self.narration)
+		x, self.narration = core.phraseReplace.phraseReplace_v2(text, self.narration)
+		return x
+		
 	def new(self, seed = None):
 		self.map_data = {}
 		self.out = ""
@@ -79,6 +90,9 @@ class gEngine():
 		
 	def load(self, name):
 		dir = "./saves/" + name
+		if (not os.path.isdir(dir)):
+			return false
+			
 		d = open(dir + "/main.pkl", "rb")
 		#d = open(name, "rb")
 		op = pickle.loads(d.read())
@@ -202,7 +216,10 @@ class gEngine():
 					#ff.close()
 					sys.exit(1)
 				else:
+					#print("Okay MUD Complete!")
+					#print(x)
 					p = split_special(x, " ")
+					#print(p)
 					#print(p)
 					#p = x.split(" ")
 					#print(self.cmds[p[0]])

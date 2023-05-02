@@ -2,50 +2,9 @@ ORTHS = [(0,1), (1,0), (0,-1), (-1, 0)]
 
 import core.phraseReplace
 
-prd = {
-	"types" : {
-		"landlocked" : [ "The land town of " ],
-		"seaside" : [ "The seaside town of ", "Port " ],
-		"oceanic" : [ "The ocean town of ", "The port town of ", "Mer-" ]
-	},
-	"start" : [
-		"<%town.pre%><%town.core%><%town.post%><%posts%>",
-		"<%town2.exec%>",
-	],
-	"space": [ "", "-", " " ],
-	"town2" : {
-		"begin" : [ "", "Upper ", "Lower ", "Inner ", "Outer " ],
-		"core1" : [ "Ren", "Ten", "Twin", "Twig", "Hex", "Fox", "Pas", "San", "Sand", "Mer", "Rin", "Crop", "Mil", "Milk", "Otter"],
-		"core2" : [ "fell", "all", "gle", "gen", "gon", "fall", "nell", "nal", "try", "wick", "wich", "maid", "well", "wall"],
-		"exec": [ "<%town2.begin%><%town2.core1%><%town2.core2%>" ]
-	},
-	"town" : {
-		"pre": [
-			"High ", "Low ", "<%positionals%> ", ""
-		],
-		"core" : [
-			"fart", "wang", "Slon", "Covid", "Butt", "dive", "fenn", "mole", "fingley", "Ten", "Net", "Fet"
-		],
-		"posts": [
-			"<%town.post%><%posts%>", "<%town.post%>",
-			
-		],
-		"post" : [
-			"ville", "ton", "hole", "wood", "borough"
-		]
-	},
-	"posts" : [
-		"-on-sea", " by <%town2.exec%>", " <%more_positionals.based%> <%town2.exec%>"
-	],
-	"more_positionals" : {
-		"based" : [
-			"over", "under", "juxta", "tween"
-		]
-	},
-	"positionals" : [
-		"Upper", "Lower"
-	]
-}
+#import plugins.common.narration.test as t
+
+#prd = t.MANIFEST
 
 import random, json, math as maths
 import noise2
@@ -79,17 +38,29 @@ class mapper():
 		"ocean" : [6, 7]
 	}
 	
+	def passTownNames(self, townNames):
+		self.town_names = townNames
+		
 	def setNoise(self, seed = 1024):
 		random.seed(seed)
 		self.nm = noise2.noiseMachine()
 		self.nm.buildNoiseBase(128)
 		self.nm.buildNoiseBase(64)
-		self.nm.addScope([0, 3, 1]).addScope([0, 5, 0]).addScope([1, 19, 2]).addScope([1, 29, 0])
+		if (False):	# Original
+			self.nm.addScope([0, 3, 1]).addScope([0, 5, 0]).addScope([1, 19, 2]).addScope([1, 29, 0])
+			self.nm.addScope([0, 61, 2])
+		else:
+			self.nm.addScope([0, 47, 1]).addScope([0, 11, 0]).addScope([1, 23, 2]).addScope([1, 5, 0])
+		
 		self.houses = noise2.noiseMachine()
 		self.houses.buildNoiseBase(16)
 		self.houses.addScope([0, 4, 1])
 		self.sea = noise2.noiseMachine()
 		self.sea.buildNoiseBase(32)
+		if (True):
+			self.sea.buildNoiseBase(64)
+			self.sea.buildNoiseBase(92)
+			self.sea.addScope([2, 119, 2]).addScope([1, 11, 2])
 		self.sea.addScope([0, 17, 0])
 	
 	def __init__(self, seed = 1024):
@@ -127,7 +98,13 @@ class mapper():
 			np = self.nm.locBuild((x, y))[0,0]
 			sea = self.sea.locBuild((x, y))[0,0]
 			#print(np)
-			mappo = maths.floor(np / 255 * 5)
+			# This will make towns smaller with bigger city areas...
+			if (np < 55): # 51?
+				mappo = 0
+			elif (np < 80): # 102?
+				mappo = 1
+			else:
+				mappo = maths.floor(np / 255 * 5)
 			#mappo = 
 			#print(mappo)
 			self.tiles[x,y] = {"type" : int(mappo), "storage" : random.choice([True, False, False]), "visible" : False }
@@ -230,8 +207,8 @@ class mapper():
 						else:
 							tp = "landlocked"
 						random.seed(p)
-						global prd
-						town_name, prd = core.phraseReplace.phraseReplace_v2("<%types." + tp + "%><%start%>", prd)
+						#global prd
+						town_name, self.town_names = core.phraseReplace.phraseReplace_v2("<%olds.towns." + tp + "%>", self.town_names)
 						print(town_name, "with", gen_houses, "house(s)")
 						self.towns.append([town_name, bounds, p])
 						print("===")
