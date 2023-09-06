@@ -228,8 +228,8 @@ class mud():
 				#print(outs)
 		return outs
 		
-	def xref(self, prompt):
-		t = [[prompt, "[START]"]]
+	def xref(self, prompt, base = "[START]"):
+		t = [[prompt, base]]
 		found = False
 		while (found == False):
 			#print(len(t))

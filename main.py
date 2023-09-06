@@ -1,10 +1,10 @@
 print("Loading dependencies...")
 
 config = {
-	"loaders" : [ "cmds.opts", "cmds.make", "cmds.engine" ],
+	"loaders" : [ "cmds.opts", "cmds.make", "cmds.engine", "cmds.npcHail"],
 	"core": {
-		"npcpt" : 60,
-		"fow_size" : 10
+		"npcpt" : 80,
+		"fow_size" : 12
 	}
 }
 import mud, core.mapper, core.phraseReplace

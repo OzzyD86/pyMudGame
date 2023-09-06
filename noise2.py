@@ -4,16 +4,23 @@ import random
 #import os
 #import json
 
-def makeNoiseImage(sz, maxrand = 255):
+def makeNoiseImage(sz, maxrand = 255, noise_obj = None):
+	if (noise_obj is not None):
+		rand = noise_obj
+	else:
+		rand = random.Random()
+		raise Exception
+
 	image = Image.new('RGB', (sz, sz))
 	px = image.load()
 
 	for x in range(0, sz):
 		for y in range(0, sz):
-			q = int(random.random() * maxrand)
-			p = int(random.random() * maxrand)
-			r = int(random.random() * maxrand)
+			q = int(rand.random() * maxrand)
+			p = int(rand.random() * maxrand)
+			r = int(rand.random() * maxrand)
 			px[x,y] = (q,p,r)
+	#print(px[0,0])
 	return image
 
 class mapper():
@@ -22,12 +29,19 @@ class mapper():
 
 class noiseMachine():
 	noise = [] 
+	rand = None
+
+	def passRandomObj(self, rand):
+		self.rand = rand
+		return self
 
 	def __init__(self):
 		self.scope = []
+		self.noise = []
+		self.passRandomObj(random.Random())
 		
 	def buildNoiseBase(self, sz, maxrand = 255):
-		x = makeNoiseImage(sz, maxrand)
+		x = makeNoiseImage(sz, maxrand, self.rand)
 		self.noise.append(x)
 		return x
 

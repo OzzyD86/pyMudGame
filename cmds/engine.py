@@ -41,7 +41,7 @@ class engine():
 					if (p[0] == "WITH" and p[1] == "SEED"):
 						seed = int(p[2])
 						p = p[3:]
-					if (p[0] == "AS"):
+					elif (p[0] == "AS"):
 						nm = str(p[1])
 						gEngine.config['save_name'] = nm
 						p = p[2:]
@@ -66,7 +66,7 @@ class engine():
 		
 muds = {
 	"START" : [ "ENGINE [ENGINE_ACTION]" ],
-	"ENGINE_ACTION" : [ "EXIT", "GAME SAVE", "GAME SAVE AS [%STRING%]", "GAME LOAD [%STRING%]", "GAME NEW AS [%STRING%]", "GAME NEW [NEW_GAME_OPTS]" ],
+	"ENGINE_ACTION" : [ "EXIT", "GAME SAVE", "GAME SAVE AS [%STRING%]", "GAME LOAD [%STRING%]", "GAME NEW AS [%STRING%]", "GAME NEW [GLIST]" ],
 	"GLIST" : [ "[NEW_GAME_OPTS]", "[NEW_GAME_OPTS] AND [NEW_GAME_OPTS]", "[NEW_GAME_OPTS], [GLIST]" ],
 	"NEW_GAME_OPTS": [ "WITH SEED [%NUMBER%]", "AS [%STRING%]"], 
 }

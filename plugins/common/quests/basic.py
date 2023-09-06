@@ -1,6 +1,12 @@
 import core.quest
 
 class basicQuest(core.quest.quest):
+	def __init__(self, gEngine, opts, *args, **kwargs):
+		self.events = {
+			"onMove" : [ self.questOnWalk ]
+		}
+		super().__init__(gEngine, opts, *args, **kwargs)
+		
 	def _begin(self):
 		if (self.internal_state == "ACCEPTED"):
 			self.out = "You have accepted my quest already"
@@ -11,5 +17,9 @@ class basicQuest(core.quest.quest):
 		else:
 			self.out = "Will you accept my quest?"
 			return True
+			
+	def questOnWalk(self, gEngine):
+		print("Hello")
+		return "Hello!"
 			
 MANIFEST = [basicQuest]

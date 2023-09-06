@@ -1,12 +1,13 @@
 from PIL import Image, ImageDraw, ImageFont
-import math as maths
+import math as maths, pathlib
+import core.moon
 
 def marker(img, loc = (0,0)):
 	return img
 
 class make():
 	def __init__(self, gEngine, opts):
-	
+		z = 0
 		m_offset = [0,0]
 		self.out = ""
 		heatmap = False
@@ -100,10 +101,10 @@ class make():
 				# So if I was to force the scale to be 16 around player 0?
 				scale = 16
 				pos = gEngine.player[gEngine.data['piq']]['position']
-				min_x = pos['x'] - maths.ceil((1960/2) / 16)
-				max_x = pos['x'] + maths.ceil((1960/2) / 16)
-				min_y = pos['y'] - maths.ceil((1080/2) / 16)
-				max_y = pos['y'] + maths.ceil((1080/2) / 16)
+				min_x = pos['x'] - maths.ceil((1960/2) / scale)
+				max_x = pos['x'] + maths.ceil((1960/2) / scale)
+				min_y = pos['y'] - maths.ceil((1080/2) / scale)
+				max_y = pos['y'] + maths.ceil((1080/2) / scale)
 				
 			drw = ImageDraw.Draw(img)
 			ol = ImageDraw.Draw(img_overlay)
@@ -111,10 +112,10 @@ class make():
 
 			for i in range(min_x, max_x+2):
 				for j in range(min_y, max_y+2):
-					if ((i,j) in gEngine.mapp.tiles.keys()):
-						if ("sightings" in gEngine.mapp.tiles[i,j]):
-							if (gEngine.mapp.tiles[i,j]['sightings'] > max_sight):
-								max_sight = gEngine.mapp.tiles[i,j]['sightings']
+					if ((i,j,z) in gEngine.mapp.tiles.keys()):
+						if ("sightings" in gEngine.mapp.tiles[i,j,z]):
+							if (gEngine.mapp.tiles[i,j,z]['sightings'] > max_sight):
+								max_sight = gEngine.mapp.tiles[i,j,z]['sightings']
 
 			# No tile drawing done before this point
 			
@@ -122,29 +123,29 @@ class make():
 			for i in range(min_x, max_x+2):
 				for j in range(min_y, max_y+2):
 					#p = gEngine.mapp.get_tile(i, j)
-					if ((i,j) in gEngine.mapp.tiles.keys() and (gEngine.mapp.tiles[(i,j)]['visible'] == True or viz == True)):
+					if ((i,j,z) in gEngine.mapp.tiles.keys() and (gEngine.mapp.tiles[(i,j,z)]['visible'] == True or viz == True)):
 						xo = abs(gEngine.player[gEngine.data['piq']]['position']['x'] - i) + abs(gEngine.player[gEngine.data['piq']]['position']['y'] - j)
 						if (xo > gEngine.config['core']['fow_size']):
 							fowdrw.rectangle((m_offset[0] + ((i - min_x) * scale), m_offset[1] + ((j - min_y) * scale), m_offset[0] + ((i - min_x + 1) * scale), m_offset[1] + ((j - min_y + 1) * scale)), fill=(0,0,0,255))
 
-						drw.rectangle((m_offset[0] + ((i - min_x) * scale), m_offset[1] + ((j - min_y) * scale), m_offset[0] + ((i - min_x + 1) * scale), m_offset[1] + ((j - min_y + 1) * scale)), fill=cols[gEngine.mapp.tiles[i,j]['type'] % len(cols)])
+						drw.rectangle((m_offset[0] + ((i - min_x) * scale), m_offset[1] + ((j - min_y) * scale), m_offset[0] + ((i - min_x + 1) * scale), m_offset[1] + ((j - min_y + 1) * scale)), fill=cols[gEngine.mapp.tiles[i,j,z]['type'] % len(cols)])
 
 			# Calculations redone to here
 			# Xs with brockets to here
 			# Ys with brockets to here
-			
-						if ("sightings" in gEngine.mapp.tiles[i,j]):
-							ol.rectangle((m_offset[0] + (i - min_x) * scale, m_offset[1] + (j - min_y) * scale, (i - min_x + 1) * scale, m_offset[1] + (j - min_y + 1) * scale), fill=(255,0,0,int(gEngine.mapp.tiles[i,j]['sightings'] / max_sight * 255)))
+						tt = gEngine.mapp.tiles[i,j,z]
+						if ("sightings" in tt):
+							ol.rectangle((m_offset[0] + (i - min_x) * scale, m_offset[1] + (j - min_y) * scale, (i - min_x + 1) * scale, m_offset[1] + (j - min_y + 1) * scale), fill=(255,0,0,int(tt['sightings'] / max_sight * 255)))
 							
-						if (houses and gEngine.mapp.tiles[i,j]['type'] in [0, 1, 7]) and ("house" in gEngine.mapp.tiles[i,j]) and (gEngine.mapp.tiles[i,j]['house'] == True):
+						if (houses and tt['type'] in [0, 1, 7]) and ("house" in tt) and (tt['house'] == True):
 							drw.ellipse((m_offset[0] + (i - min_x + 0.2) * scale, m_offset[1] + (j - min_y + 0.2) * scale, m_offset[0] + (i - min_x + 0.8) * scale, m_offset[1] + (j - min_y + 0.8) * scale), fill=(255,0,0)) 
 							drw.ellipse((m_offset[0] + (i - min_x + 0.3) * scale, m_offset[1] + (j - min_y + 0.3) * scale, m_offset[0] + (i - min_x + 0.7) * scale, m_offset[1] + (j - min_y + 0.7) * scale), fill=(127,127,0))
 
-						if (houses and gEngine.mapp.tiles[i,j]['type'] in [0, 1, 7]) and ("station" in gEngine.mapp.tiles[i,j]) and (gEngine.mapp.tiles[i,j]['station'] == True):
+						if (houses and tt['type'] in [0, 1, 7]) and ("station" in tt) and (tt['station'] == True):
 							drw.ellipse((m_offset[0] + (i - min_x + 0.3) * scale, m_offset[1] + (j - min_y + 0.3) * scale, m_offset[0] + (i - min_x + 0.7) * scale, m_offset[1] + (j - min_y + 0.7) * scale), fill=(127,127,255)) 
 							drw.ellipse((m_offset[0] + (i - min_x + 0.4) * scale, m_offset[1] + (j - min_y + 0.4) * scale, m_offset[0] + (i - min_x + 0.6) * scale, m_offset[1] + (j - min_y + 0.6) * scale), fill=(0,0,127))
 
-						if (houses and gEngine.mapp.tiles[i,j]['type'] in [0, 1, 7]) and ("shop" in gEngine.mapp.tiles[i,j]) and (gEngine.mapp.tiles[i,j]['shop'] == True):
+						if (houses and tt['type'] in [0, 1, 7]) and ("shop" in tt) and (tt['shop'] == True):
 							drw.ellipse((m_offset[0] + (i - min_x + 0.3) * scale, m_offset[1] + (j - min_y + 0.3) * scale, m_offset[0] + (i - min_x + 0.7) * scale, m_offset[1] + (j - min_y + 0.7) * scale), fill=(127,255,127)) 
 							drw.ellipse((m_offset[0] + (i - min_x + 0.4) * scale, m_offset[1] + (j - min_y + 0.4) * scale, m_offset[0] + (i - min_x + 0.6) * scale, m_offset[1] + (j - min_y + 0.6) * scale), fill=(0,127,0))
 
@@ -200,7 +201,11 @@ class make():
 						drw.text((m_offset[0] + (j['location'][0] - min_x + 0.8) * scale, m_offset[1] + ((j['location'][1] - min_y + 0.5) * scale) -7), j['label'],(255,255,255),font=ft)
 						drw.ellipse((m_offset[0] + (j['location'][0] - min_x + 0.3) * scale, m_offset[1] + (j['location'][1] - min_y + 0.3) * scale, m_offset[0] + (j['location'][0] - min_x + 0.7) * scale, m_offset[1] + (j['location'][1] - min_y + 0.7) * scale), fill=(255,0,255))
 
+			img.paste(core.moon.day(int(gEngine.time)), (0,0))
+			
 			img.save("map.png")
+			pathlib.Path("saves/" + gEngine.config['save_name'] + "/screenshots/").mkdir(exist_ok=True, parents=True)
+			img.save("saves/" + gEngine.config['save_name'] + "/screenshots/" + str(gEngine.time) + ".png")
 			pass
 			# Xs with no brackets to here
 			# Ys with no brackets to here

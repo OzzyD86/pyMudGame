@@ -17,7 +17,7 @@ class mapCmd():
 					p = 0
 					c = 0
 					dl = None
-					dd = tuple(gEngine.player[gEngine.data['piq']]['position'].values())
+					dd = tuple([*gEngine.player[gEngine.data['piq']]['position'].values(), 0])
 					print(dd)
 					for i in gEngine.map_data['players'][gEngine.data['piq']]['map_points']:
 #						print(i)
@@ -50,7 +50,7 @@ class mapCmd():
 				if (opts[4] == "AT"):
 					loc = (int(opts[6].strip(",(")), int(opts[7].strip(")")))
 				elif (opts[4] == "HERE"):
-					loc = tuple(gEngine.player[gEngine.data['piq']]['position'].values())
+					loc = tuple([*gEngine.player[gEngine.data['piq']]['position'].values(),0])
 				print("Location:", loc)
 				
 				gEngine.map_data['players'][gEngine.data['piq']]['map_points'].append({ "location" : loc, "label" : w_name})

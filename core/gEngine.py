@@ -79,19 +79,29 @@ class gEngine():
 		self.out = ""
 		self.transcript = ""
 		self.time = 0
-		self.player = [{ "time" : 0, "human" : True, "position": { "x": 0, "y" : 0 }}]
+		self.player = [{ "time" : 0, "human" : True, "position": { "x": 0, "y" : 0, "z" : 0 }}]
+		
 		for i in self.loaders:
 			getattr(self, i).reset()
 		if (seed is None):
 			self.config['seed'] = random.randrange(sys.maxsize)
 		else:
 			self.config['seed'] = seed
+		random.seed(self.config['seed'])
 		self.mapp.reset(self.config['seed'])
+
+		while (self.mapp.get_tile(self.player[0]['position']['x'], self.player[0]['position']['y'])['type'] in self.mapp.forbid_move):
+			p = random.choice(self.mapp.edge_tiles)
+			print("Try" + str(p))
+			self.player[0]['position'] = { "x" : p[0], "y" : p[1], "z" : p[2] }
+			print(".", end='')
+		
+		print(self.player[0]['position'])
 		
 	def load(self, name):
 		dir = "./saves/" + name
 		if (not os.path.isdir(dir)):
-			return false
+			return False
 			
 		d = open(dir + "/main.pkl", "rb")
 		#d = open(name, "rb")
@@ -101,22 +111,29 @@ class gEngine():
 		d = open(dir + "/defaults.pkl", "rb")
 		defs = pickle.loads(d.read())
 		d.close()
+		
 		if (os.path.isfile(dir + "/map_data.pkl")):
 			d = open(dir + "/map_data.pkl", "rb")
 			self.map_data = pickle.loads(d.read())
 			d.close()
 		else:
 			self.map_data = {}
-			
+		
 		self.config['save_name'] = name
 		self.config['seed'] = defs['seed']
 		print("Seed is " + str(self.config['seed']))
 		self.mapp.reset(self.config['seed'])
 		#self.position = op['self']
 		self.player = op['player']
+		for i in self.player:
+			if not ("z" in i['position']):
+				i['position']['z'] = 0
 		self.data = op['data']
-		self.mapp.raw_load(op['map'])
-	
+		if (op['map'] != {}):
+			self.mapp.raw_load(op['map'])
+		
+		self.mapp.load(name)
+		
 	def partLoad(self, part, obj):
 		self.loaders.append(part)
 		setattr(self, part, obj)
@@ -153,17 +170,26 @@ class gEngine():
 		pathlib.Path(dir).mkdir(exist_ok=True)
 		
 		d = open(dir + "/main.pkl", "wb")
+		self.mapp.save(dir)
+		
 		op = pickle.dumps({ "map" : self.mapp.raw_save(), "time" : self.time, "player" : self.player, "data" : self.data })
 		d.write(op)
 		d.close()
 		d = open(dir + "/defaults.pkl", "wb")
 		self.config['save_name'] = name
 		d.write(pickle.dumps({ "seed" : self.config['seed'] }))
-
+		
 		d = open(dir + "/map_data.pkl", "wb")
 		d.write(pickle.dumps(self.map_data))
 		
 		d.close()
+	
+	def genUniqueNum(self):
+		if ("uidc" not in self.data):
+			self.data['uidc'] = 0
+			
+		self.data['uidc'] += 1
+		return self.data['uidc']
 		
 	def cmdExec(self, cmd = ""):
 		o = self.mud.xref(cmd)
@@ -196,13 +222,18 @@ class gEngine():
 #		print(x)
 		
 		while True:
-			
-			#for i in self.player:
-			#	
-			#	print(i)
-			
+						
 			x = input("Choose your action: ").upper()
-			o = self.mud.xref(x)
+			print()
+			if ("map_state" not in self.map_data['players'][self.data['piq']]):
+				self.map_data['players'][self.data['piq']]['map_state'] = 0
+			
+			ms = self.map_data['players'][self.data['piq']]['map_state']
+			if (ms == 0):
+				state = "[START]"
+			elif(ms == 1):
+				state = "[SHOP_INSIDE]"
+			o = self.mud.xref(x, state)
 			#print(o)
 			if (o):
 				if (x == "EXIT"):
@@ -244,3 +275,35 @@ class gEngine():
 				pass
 			else:
 				print(x + " is invalid")
+				
+	def registerEvent(self, pid, npcid, quest):
+		if not ("questList" in self.data):
+			self.data['questList'] = []
+		
+		self.data['questList'].append([pid, npcid, quest])
+		print("Registered")
+		return None
+
+	def deregisterEvent(self, pid, npcid):
+		q = []
+		for i in self.data['questList']:
+			if not (i[0] == pid and i[1] == npcid):
+				q.append(i)
+				
+		self.data['questList'] = q
+		return None
+		
+	def cueEvts(self, event = ""):
+		out = ""
+		if (event in self.events):
+			for i in self.events[event]:
+				out += i(self)
+		
+		if ("questList" in self.data):
+			print(self.data['questList'])
+			for i in self.data['questList']:
+				if (event in i[2].events):
+					for j in i[2].events[event]:
+						out += j(self)
+					
+		return { "transcript" : out }

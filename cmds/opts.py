@@ -29,9 +29,11 @@ class head():
 				x = gEngine.mapp.get_tile(pl['position']['x']+i[0], pl['position']['y']+i[1])
 				x['visible'] = True
 				
-			if ("onMove" in gEngine.events):
-				for i in gEngine.events['onMove']:
-					self.out += i(gEngine)
+			tt = gEngine.cueEvts("onMove")
+			self.out += tt['transcript']
+			#if ("onMove" in gEngine.events):
+			#	for i in gEngine.events['onMove']:
+			#		self.out += i(gEngine)
 		else:
 			self.out += "You cannot head " + p[1].lower() + "."
 			if (p[1] in ["NORTH", "UP"]):	# Is there a better way than doing this?

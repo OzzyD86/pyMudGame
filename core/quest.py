@@ -1,6 +1,7 @@
 class quest():
-	def __init__(self, gEngine, opts):
+	def __init__(self, gEngine, opts, *args, **kwargs):
 		# This will be called at the beginning ... I mean ... obviously!
+		print(args, kwargs)
 		self.internal_state = None
 		self.engine = gEngine
 		self.opts = opts
@@ -19,20 +20,27 @@ class quest():
 		print(opts)
 		if (len(opts) > 3 and opts[3] in ["ACCEPT", "DECLINE", "COMPLETE"]):
 			action = opts[3]
+			po = opts[4]
 		elif (len(opts) > 2 and opts[2] in ["ACCEPT", "DECLINE", "COMPLETE"]):
 			action = opts[2]
+			po = opts[3]
 		else:
 			action = "INIT"
 		
 		if (action == "ACCEPT"):
 			if (self._accept()):
 				self.internal_state = "ACCEPTED"
+				#if ("uid" in
+				self.engine.registerEvent( self.engine.data['piq'], po, self )
 		elif (action == "DECLINE"):
 			if (self._decline()):
 				self.internal_state = "DECLINED"
+				self.engine.deregisterQuest( self.engine.data['piq'], po, self )
 		elif (action == "COMPLETE"):
 			if (self._complete()):
 				self.internal_state = "COMPLETED"
+				#self.engine.deregisterQuest( self.gEngine.data['piq'], None, self )
+
 		else:
 			if (self._begin()):
 				self.internal_state = "INITIALISED"
@@ -100,8 +108,17 @@ class quest():
 			self.out = "Hold up! Finish the quest first, please!"
 			return False
 	
+	def _questUpdate(self, event = ""):
+		out = ""
+		if (event in self.events):
+			for i in self.events[event]:
+				out += i(self)
+		return { "transcript" : self.out }
+
 	def describe(self):
 		return self.out
 	
 	def pushTime(self):
 		return 0.01
+	
+	
