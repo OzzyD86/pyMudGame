@@ -2,7 +2,7 @@ import json, pickle, pathlib
 import sys, importlib
 import random, os
 import core.phraseReplace
-
+import achievements
 #sys.path.append("../")
 #import mapper
 
@@ -60,12 +60,14 @@ def split_special(string = "", around = " "):
 class gEngine():
 	def __init__(self):
 		self.map_data = {}
+		self.partials = {}
 		self.cmds = {}
 		self.config = {  }
 		self.events = { "onMove" : [] }	# For example
 		self.tickOps = []
 		self.loaders = []
 		self.data = {}
+		self.achievements = achievements.achievement_stack()
 		#self.new()
 		#self.position = {"x" : 0,"y" : 0 }
 
@@ -76,8 +78,10 @@ class gEngine():
 		
 	def new(self, seed = None):
 		self.map_data = {}
+		self.data['questList'] = []
 		self.out = ""
 		self.transcript = ""
+		self.achievements.reset()
 		self.time = 0
 		self.player = [{ "time" : 0, "human" : True, "position": { "x": 0, "y" : 0, "z" : 0 }}]
 		
@@ -96,7 +100,9 @@ class gEngine():
 			self.player[0]['position'] = { "x" : p[0], "y" : p[1], "z" : p[2] }
 			print(".", end='')
 		
+		#self.map_data['players'] = { 0: {} }
 		print(self.player[0]['position'])
+		
 		
 	def load(self, name):
 		dir = "./saves/" + name
@@ -107,6 +113,7 @@ class gEngine():
 		#d = open(name, "rb")
 		op = pickle.loads(d.read())
 		d.close()
+#		print(op)
 		self.time = op['time']
 		d = open(dir + "/defaults.pkl", "rb")
 		defs = pickle.loads(d.read())
@@ -133,12 +140,34 @@ class gEngine():
 			self.mapp.raw_load(op['map'])
 		
 		self.mapp.load(name)
+		self.achievements.reset()
+		if ('achievements' in op):
+			self.achievements.autoGrant(op['achievements']['awarded'])
+			for i, j in op['achievements']['vars'].items():
+				self.achievements.vars[i] = j
+		
+	def add_score(self, player, nature, value):
+		p = self.player[player]
+		if not ("score" in p):
+			p['score'] = 0
+			
+		if not ("score_breakdown" in p):
+			p['score_breakdown'] = {}
+			
+		if (nature in p['score_breakdown']):
+			p['score_breakdown'][nature]['score'] += value
+		else:
+			p['score_breakdown'][nature] = { "nature" : nature, "score" : value }
+			
+		p['score'] += value
+		return True
 		
 	def partLoad(self, part, obj):
 		self.loaders.append(part)
 		setattr(self, part, obj)
 		
 	def tick(self, quantity = 1):
+		print("Tick.")
 		for i in range(quantity):
 			self.time += 1
 			#self.out = " Time is pushed on by 1. (" + doTime(self.time) + ")\n" # doTime is still in main.py - needs moving to work
@@ -158,7 +187,8 @@ class gEngine():
 				# Loop through all the tick operations
 				#p = j()
 				#p.runTick(self)
-				pass
+				#pass
+			self.cueEvts("onTick")
 	
 	def passiveTranscript(self):
 		x = self.out
@@ -172,7 +202,12 @@ class gEngine():
 		d = open(dir + "/main.pkl", "wb")
 		self.mapp.save(dir)
 		
-		op = pickle.dumps({ "map" : self.mapp.raw_save(), "time" : self.time, "player" : self.player, "data" : self.data })
+		#for i in self.achievements.vars
+		op = pickle.dumps({ "map" : self.mapp.raw_save(), "time" : self.time, "player" : self.player, "data" : self.data,
+			"achievements" : {
+				"awarded" : self.achievements.get_completed(),
+				"vars": self.achievements.vars
+			}})
 		d.write(op)
 		d.close()
 		d = open(dir + "/defaults.pkl", "wb")
@@ -181,6 +216,7 @@ class gEngine():
 		
 		d = open(dir + "/map_data.pkl", "wb")
 		d.write(pickle.dumps(self.map_data))
+		
 		
 		d.close()
 	
@@ -222,9 +258,16 @@ class gEngine():
 #		print(x)
 		
 		while True:
-						
+			#print("Here?")
 			x = input("Choose your action: ").upper()
 			print()
+			
+			if ("players" not in self.map_data):
+				self.map_data['players'] = {}
+				
+			if (self.data['piq'] not in self.map_data['players']):
+				self.map_data['players'][self.data['piq']] = { "map_points" : [] }
+				
 			if ("map_state" not in self.map_data['players'][self.data['piq']]):
 				self.map_data['players'][self.data['piq']]['map_state'] = 0
 			
@@ -271,11 +314,26 @@ class gEngine():
 					t = self.passiveTranscript()
 					self.transcript += "> " + x + "\n" + a.describe() + " " + t + "\n\n"
 					print(a.describe() + t)
+					a = self.achievements.checkAll()
+					for i in a:
+						print("==" * 40 + "\n\nYou have a new achievement:\n\n"+ i.title + "\n\n" + "==" * 40)
+					#print(a)
 		#			print(t)
 				pass
 			else:
 				print(x + " is invalid")
-				
+	
+	def handlePartial(self, ls, mode, postMud, preMud = []):
+		if (isinstance(mode.lower(), list)):
+			raise Exception("Fix this please!")
+		#	foo = importlib.import_module(self.cmds[p[0]][0])
+		#	r = getattr(foo, self.cmds[p[0]][1])
+		else:
+			r = self.partials[ls][mode.lower()]
+
+		return r(self, preMud, postMud)
+	
+	
 	def registerEvent(self, pid, npcid, quest):
 		if not ("questList" in self.data):
 			self.data['questList'] = []
@@ -284,7 +342,7 @@ class gEngine():
 		print("Registered")
 		return None
 
-	def deregisterEvent(self, pid, npcid):
+	def deregisterEvent(self, pid, npcid, quest):
 		q = []
 		for i in self.data['questList']:
 			if not (i[0] == pid and i[1] == npcid):
@@ -293,17 +351,20 @@ class gEngine():
 		self.data['questList'] = q
 		return None
 		
-	def cueEvts(self, event = ""):
+	def cueEvts(self, event = "", **kwargs):
+		#print(kwargs)
 		out = ""
+		#print("Run events for " + event)
 		if (event in self.events):
 			for i in self.events[event]:
-				out += i(self)
+				out += i(self, **kwargs)
 		
 		if ("questList" in self.data):
-			print(self.data['questList'])
+			#print(self.data['questList'])
 			for i in self.data['questList']:
+				#print(i)
 				if (event in i[2].events):
 					for j in i[2].events[event]:
-						out += j(self)
+						out += j(self, **kwargs)
 					
 		return { "transcript" : out }

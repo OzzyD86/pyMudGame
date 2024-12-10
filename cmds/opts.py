@@ -74,6 +74,19 @@ cmds = {
 	"HAED" :  head, # For those like me who  type too fast and get annoyed by it!
 }
 
+def tick(gEngine, **kwargs):
+	print (gEngine.time % 1440)
+	if ((gEngine.time % 1440) == 0):
+		print("DO SOME CLEANUP")
+		for i in gEngine.player:
+			if ("quest" in i and i["quest"] is not None):
+				print(i["quest"].internal_state)
+				if (i['quest'].internal_state in ["COMPLETED", "DECLINED", "FAILED"]):
+					print("None quest")
+					i["quest"] = None
+				
+	return "I have ticked. "
+
 events = {
-#	"onMove"
+	"onTick": [ tick ]
 }

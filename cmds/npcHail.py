@@ -22,8 +22,6 @@ class npcHail():
 					if (d <= 15):
 						hails += 1
 						print("An NPC within hailing distance")
-			
-			#print(gEngine.player)
 			if (hails == 0):
 				self.out += "No-one hears you. "
 			else:
@@ -52,6 +50,8 @@ class npcHail():
 			response = "There are multiple people in range:\n"
 			for i in npcs:
 				nx += 1
+				if not ("uid" in i):
+					i['uid'] = gEngine.genUniqueNum()
 				response += str(nx) + ": " + str(i) + "\n"
 			select_npc = None
 			sw = "default"
@@ -81,39 +81,44 @@ class npcHail():
 				else:
 					opts = opts[1:]
 			
-			if (select_npc is None and len(npcs) > 1):
+			if (select_npc is None and len(npcs) > 0):
 				self.out += response
 			elif (len(npcs) == 0):
 				self.out += "There is no-one around\n"
-			elif(select_npc is not None and ((select_npc < 0) or ((select_npc) > len(npcs)))):
+			elif (select_npc is not None and ((select_npc < 0) or ((select_npc) > len(npcs)))):
 				self.out += "There is no such option on this list\n"
+			elif (select_npc is None):
+				self.out= "Does this get run here? And why? What is the reason?"
 			else:
 				self.out += "Switch to " + sw + " for NPC " + str(select_npc) + ". Action!"
 				## Okay. If we're here, things need to get done
 #				self.out += "\n" + str(npcs[select_npc - 1]) + "\n" # I need not write this line any more. Keeping it for debug and completeness and what not
-				if (select_npc is None):
-					self.out += "\nPlease select an NPC."
-				else:
-					pp = npcs[select_npc - 1]
-					if (not "quest" in pp):
-						pp['quest'] = None
-						print("Adding quest to NPC. Let's see what happens")
+				pp = npcs[select_npc - 1]
+				if (not "quest" in pp):
+					pp['quest'] = None
+					print("Adding quest to NPC. Let's see what happens")
 				
-					if (not "uid" in pp):
-						pp['uid'] = gEngine.genUniqueNum()
-						print(pp['uid'])
+				if pp['quest'] is None:
+					#print(gEngine.quests)
+					for i in [1,2,3,4,5]:
+						p = random.choice(gEngine.quests)
+						if (p(gEngine, [])._isAssignable()):
+							break
+							
+					x = p(gEngine, ['', '', sw.upper()])
+					pp['quest'] = x
+					print("Give NPC a quest here!")
+				else:
+					print("This NPC has a quest!")
+					x = pp['quest'].state(['', '', sw.upper()])	# Now then ... can I do this?
+					
+				if (sw.upper() in ['ACCEPT'] and x.last_state):
+					gEngine.registerEvent(gEngine.data['piq'], pp['uid'], pp['quest'])
+				elif (sw.upper() in ['DECLINE', 'COMPLETE'] and x.last_state):
+					gEngine.deregisterEvent(gEngine.data['piq'], pp['uid'], pp['quest'])
 
-					if pp['quest'] is None:
-						#print(gEngine.quests)
-						x = random.choice(gEngine.quests)(gEngine, ['', '', sw.upper(), pp['uid']])
-						pp['quest'] = x
-						print("Give NPC a quest here!")
-					else:
-						print("This NPC has a quest!")
-						x = pp['quest'].state(['', '', sw.upper(), pp['uid']])	# Now then ... can I do this?
-
-					self.out += "\n" + x.describe()
-					self.timeshift += x.pushTime()
+				self.out += "\n" + x.describe()
+				self.timeshift += x.pushTime()
 
 	def pushTime(self):
 		return self.timeshift

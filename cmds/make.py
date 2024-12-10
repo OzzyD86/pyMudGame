@@ -182,7 +182,16 @@ class make():
 							for j in range(1,len(i['route'])):
 								drw.line((m_offset[0] + (i['route'][j-1][0] - min_x + 0.5) * scale, m_offset[1] + (i['route'][j-1][1] - min_y+0.5) * scale, m_offset[0] + (i['route'][j][0] - min_x+0.5) * scale, m_offset[1] + (i['route'][j][1] - min_y+0.5) * scale), fill=(0,0,255), width=3)
 #							drw.line(((i['position']['x'] - min_x + 0.5) * scale, (i['position']['y'] - min_y+0.5) * scale, (end[0] - min_x+0.5) * scale, (end[1] - min_y+0.5) * scale), fill=(0,0,255), width=5)
-					co = (0,0,255)
+
+					#if ("quest" in i):
+					
+					if ("quest" in i and i["quest"] is not None and i["quest"].internal_state in ["ACCEPTED"]):
+						if (i['quest']._criteria_met()):
+							co = (0, 127, 127)
+						else:
+							co = (0,255,255)
+					else:
+						co = (0,0,255)
 				else:
 					co = (255,0,0)
 					
@@ -205,6 +214,7 @@ class make():
 			
 			img.save("map.png")
 			pathlib.Path("saves/" + gEngine.config['save_name'] + "/screenshots/").mkdir(exist_ok=True, parents=True)
+			print ("saves/" + gEngine.config['save_name'] + "/screenshots/" + str(gEngine.time) + ".png")
 			img.save("saves/" + gEngine.config['save_name'] + "/screenshots/" + str(gEngine.time) + ".png")
 			pass
 			# Xs with no brackets to here

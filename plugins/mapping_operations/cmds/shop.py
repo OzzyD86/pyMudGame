@@ -1,17 +1,36 @@
 class mapCmd():
 	def __init__(self, gEngine, opts):
 		self.out = ""
+		
 		if not "players" in gEngine.map_data:
 			gEngine.map_data['players'] = {}
 		
 		if not gEngine.data['piq'] in gEngine.map_data['players']:
 			gEngine.map_data['players'][gEngine.data['piq']] = {}
-			gEngine.map_data['players'][gEngine.data['piq']]['map_points'] = []
+			#gEngine.map_data['players'][gEngine.data['piq']]['map_points'] = []
+		
+		if not "map_state" in gEngine.map_data['players'][gEngine.data['piq']]:
+			gEngine.map_data['players'][gEngine.data['piq']]['map_state'] = 0
 			
+		print (gEngine.map_data['players'][gEngine.data['piq']])
 		
 		#print("Done something!")
 		print(opts)
-		if (opts[2] in  ["LIST", "DELETE", "DEL"]):
+		if (opts[1] == "ENTER"):
+			if (gEngine.map_data['players'][gEngine.data['piq']]['map_state'] == 0):
+				self.out += "You enter the shop"
+				gEngine.map_data['players'][gEngine.data['piq']]['map_state'] = 1
+			else:
+				self.out += "You cannot do this right now"
+				
+		elif (opts[1] == "LEAVE"):
+			if (gEngine.map_data['players'][gEngine.data['piq']]['map_state'] == 1):
+				self.out += "You leave the shop"
+				gEngine.map_data['players'][gEngine.data['piq']]['map_state'] = 0
+			else:
+				self.out += "You cannot do this right now"
+		
+		'''if (opts[2] in  ["LIST", "DELETE", "DEL"]):
 			if (opts[1] == "WAYPOINT"):
 				if (opts[3] == "HERE"):
 					p = 0
@@ -54,7 +73,7 @@ class mapCmd():
 				print("Location:", loc)
 				
 				gEngine.map_data['players'][gEngine.data['piq']]['map_points'].append({ "location" : loc, "label" : w_name})
-				
+	'''			
 	def pushTime(self):
 		return 0.001
 	
@@ -62,15 +81,15 @@ class mapCmd():
 		return self.out
 		
 muds = {
-	"START" : [ "MAP [MAP_OPTIONS]" ],
-	"MAP_OPTIONS" : [ "WAYPOINT ADD [%STRING%] [MAP_LOCS]", "WAYPOINT LIST HERE", "WAYPOINT DELETE HERE [%NUMBER%]"],
-	"MAP_LOCS" : [ "AT LOCATION ([%NUMBER%], [%NUMBER%])", "HERE"]
-#	"MAP_WITH_OPTIONS" : [ "[MAP_OPT]", "[MAP_OPT] AND [MAP_OPT]", "[MAP_OPT], [MAP_WITH_OPTIONS]" ],
-#	"MAP_OPT" : ["HEAT ZONES", "NO HOUSES", "NO FOG OF WAR", "ALL SQUARES VISIBLE"]
+	"START" : [ "SHOP [SHOP_OPTIONS]" ],
+	"SHOP_INSIDE" : ["SHOP [SHOP_OPTIONS]", "EXIT" ],
+	"SHOP_OPTIONS" : [ "ENTER", "LEAVE"]
+	#"MAP_OPTIONS" : [ "WAYPOINT ADD [%STRING%] [MAP_LOCS]", "WAYPOINT LIST HERE", "WAYPOINT DELETE HERE [%NUMBER%]"],
+	#"MAP_LOCS" : [ "AT LOCATION ([%NUMBER%], [%NUMBER%])", "HERE"]
 }
 
 cmds = {
-	"MAP" : mapCmd ,
+	"SHOP" : mapCmd ,
 }
 
 MANIFEST = {

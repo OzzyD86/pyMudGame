@@ -1,8 +1,12 @@
 import core.tickableObject
 import random
 import core.autolat
+from core.gEngine import array_merge
+#from core.mapper import aStarPartial, aStarComplete
+
 class doNPCTick(core.tickableObject.tickableObject):
 	def runTick(self):
+		
 		c = 0
 		players = []
 		npcs = []
@@ -12,7 +16,11 @@ class doNPCTick(core.tickableObject.tickableObject):
 			else:
 				npcs.append(i)
 				
+		seen = []
+		caught = []
+		
 		for i in npcs:
+		
 			c += 1
 			if (i['time'] < self.gEngine.time):
 				pl = self.gEngine.player[self.gEngine.data['piq']]
@@ -20,58 +28,15 @@ class doNPCTick(core.tickableObject.tickableObject):
 				#	pl['position']['z'] = 0
 				if (not "z" in i['position']):
 					i['position']['z'] = 0
-					
+
+				rets = {}
+				for j in self.gEngine.npcLogic:
+					rets = array_merge(rets, j.doTick(npc = i, self = self, npcs = npcs))
+				
+				#print(seen, rets['seen'])
+				seen = list(set().union(seen, rets['seen'])) # array_merge(seen, rets['seen'])
+				
 				ra = (abs(i['position']['x'] - pl['position']['x']) + abs((i['position']['y'] - pl['position']['y'])) + abs((i['position']['z'] - pl['position']['z']) * 4))
-				#print(ra)
-				if (ra <= 7):
-					self.out += self.gEngine.say("<%NPC.sighted%>") #"An NPC is within detectable range of the player. "
-					if (True):
-						if not ("z" in i['position']):
-							i['position']['z'] = 0
-						pt = self.gEngine.mapp.tiles[i['position']['x'], i['position']['y'], i['position']['z']]
-						if ("sightings" in pt):
-							pt['sightings'] += 1
-						else:
-							pt['sightings'] = 1
-							
-						#print("ALERT: ", self.gEngine.mapp.tiles[i['position']['x'], i['position']['y']])
-						if (i['nature'] == "chaser"):
-							self.out += "They start to follow. "
-							a = self.gEngine.mapp.aStarSearch((i['position']['x'], i['position']['y'], i['position']['z']), (pl['position']['x'], pl['position']['y'], pl['position']['z']))
-							if (isinstance(a, core.mapper.aStarComplete)):
-								#print(a.history)
-								i['route'] = a.history.copy()[1:]
-								i['mode'] = "chase"
-								i['data'] = { "location" : pl['position'] }
-							elif (isinstance(a, core.mapper.aStarPartial)):
-								i['route'] = a
-							#print("Path obj: ", a)
-						elif (i['nature'] == "shouter"):
-							self.out += "They shout. "
-							p = 0
-							for j in npcs:
-								if not (i == j):
-									
-									ra = (abs(i['position']['x'] - j['position']['x']) + abs((i['position']['y'] - j['position']['y'])) + abs((i['position']['z'] - j['position']['z'])))
-									if (ra <= 15 and j['mode'] != "chase"):
-										#print(j)
-										p += 1
-										print(i['position'], j['position'])
-										if not ("z" in j['position']):
-											j['position']['z'] = 0
-										a = self.gEngine.mapp.aStarSearch((j['position']['x'], j['position']['y'], j['position']['z']), (i['position']['x'], i['position']['y'], i['position']['z']))
-										if (isinstance(a, core.mapper.aStarComplete)):
-											j['route'] = a.history.copy()[1:]
-											print("a:", a.history)
-											j['data'] = { "location" : i['position'] }
-											j['mode'] = "alert"
-										elif (isinstance(a, core.mapper.aStarPartial)):
-											j['route'] = a
-#										j['route'] = a.copy()
-										#print(j)
-									#sys.exit(1)
-							if (p > 0):
-								self.out += str(p) + " more people are alerted! "
 				
 				via = []
 				if ("route" in i):
@@ -117,14 +82,52 @@ class doNPCTick(core.tickableObject.tickableObject):
 				i['time'] += 1.4
 				
 				if (i['position'] == pl['position']):
-					self.gEngine.cueEvts("playerCaught")
-
-					print("'You have been caught, and for you, the chase is over' - Bradley Walsh")
-					print(core.autolat.autolatCradle([["You have lost", self.gEngine.data['quests']['cashPot']]]).go())
-					pl['naked'] = False
-					self.gEngine.data['quests']['cashPot'] = 0
+					if (not "uid" in i):
+						i['uid'] = self.gEngine.genUniqueNum()
+					caught.append(i['uid'])
 			#else:
 			#	print("NPC waiting...")
+
+		if (len(seen) > 0):
+			print("Seen by " + str(len(seen)) + " people.\n")
+			self.out += self.gEngine.cueEvts("playerSeen", args=seen)['transcript']
+			
+		if (len(caught) > 0):
+			self.gEngine.cueEvts("playerCaught", args=caught)
+			if not ("captures" in pl):
+				pl['captures'] = 0
+			
+			pl['captures'] += 1
+			
+			o = []
+			
+			if ("score" in pl):
+				o.append(["Your current score", pl['score']])
+			else:
+				o.append(["Your current score", 0])
+				
+			o.append(["New set of clothes", -16])
+			self.gEngine.add_score(self.gEngine.data['piq'], "clothing", -16)
+
+			#rem = 16
+			
+			if (pl['captures'] > 5):
+				c = (pl['captures'] - 5) * 100
+				o.append(["Penalty for capture"], c)
+				self.gEngine.add_score(self.gEngine.data['piq'], "capture_penalty", -c)
+				#rem += c
+			
+			#pl['score'] -= rem
+			
+			o.append(["Your new score", pl['score']])
+
+			print(core.autolat.autolatCradle(o).go())
+			
+			print("'You have been caught, and for you, the chase is over' - Bradley Walsh")
+			print(core.autolat.autolatCradle([["You have lost", self.gEngine.data['quests']['cashPot']]]).go())
+			pl['naked'] = False
+			self.gEngine.data['quests']['cashPot'] = 0
+			
 		ti = len(self.gEngine.mapp.tiles)
 		#print(self.gEngine.mapp.tiles)
 		#print(str(ti) + " tile(s) should spawn " + str(ti // self.gEngine.config['core']['npcpt']) + " NPCs, and there are " + str(c))
@@ -158,4 +161,4 @@ class doNPCTick(core.tickableObject.tickableObject):
 						print("Spawn")
 
 				if (spw):
-					self.gEngine.player.append({ "position" : { "x" : w[0], "y": w[1], "z" : 0 }, "time" : self.gEngine.time, "human" : False, "nature" : random.choice(["chaser", "chaser", "shouter"]), "mode" : "frolick", "data": {} })
+					self.gEngine.player.append({ "uid": self.gEngine.genUniqueNum(), "position" : { "x" : w[0], "y": w[1], "z" : 0 }, "time" : self.gEngine.time, "human" : False, "nature" : random.choice(["chaser", "chaser", "shouter"]), "mode" : "frolick", "data": {} })

@@ -1,7 +1,6 @@
 class quest():
-	def __init__(self, gEngine, opts, *args, **kwargs):
+	def __init__(self, gEngine, opts):
 		# This will be called at the beginning ... I mean ... obviously!
-		print(args, kwargs)
 		self.internal_state = None
 		self.engine = gEngine
 		self.opts = opts
@@ -16,35 +15,38 @@ class quest():
 		self.state(opts)
 		
 	def state(self, opts):
+		self.last_state = False
 		# Basically, once the system has started, this will be the way we interact with the class from the top, but for now
 		print(opts)
 		if (len(opts) > 3 and opts[3] in ["ACCEPT", "DECLINE", "COMPLETE"]):
 			action = opts[3]
-			po = opts[4]
 		elif (len(opts) > 2 and opts[2] in ["ACCEPT", "DECLINE", "COMPLETE"]):
 			action = opts[2]
-			po = opts[3]
 		else:
 			action = "INIT"
 		
+		if (self.internal_state == "FAILED"):
+			return self
+			
 		if (action == "ACCEPT"):
 			if (self._accept()):
 				self.internal_state = "ACCEPTED"
-				#if ("uid" in
-				self.engine.registerEvent( self.engine.data['piq'], po, self )
+				self.last_state = True
+				#self.engine.registerEvent(self.engine.data['piq'], None, self)
 		elif (action == "DECLINE"):
 			if (self._decline()):
 				self.internal_state = "DECLINED"
-				self.engine.deregisterQuest( self.engine.data['piq'], po, self )
+				self.last_state = True
+				#self.engine.deregisterEvent(self.engine.data['piq'], None, self)
 		elif (action == "COMPLETE"):
 			if (self._complete()):
 				self.internal_state = "COMPLETED"
-				#self.engine.deregisterQuest( self.gEngine.data['piq'], None, self )
-
+				self.last_state = True
+				#self.engine.deregisterEvent(self.engine.data['piq'], None, self)
 		else:
 			if (self._begin()):
+				self.last_state = True
 				self.internal_state = "INITIALISED"
-			
 
 		return self
 		
@@ -70,9 +72,15 @@ class quest():
 		# This quest tick does nothing
 		return ""
 		
+	def explain(self):
+		return "Please put a 'def explain() in your quest, returning a brief explanation"
+	
+	def _isAssignable(self):
+		return True
+		
 	def _accept(self):
 		if (self.internal_state in ["COMPLETED", "DECLINED"]):
-			self.out = "It's no longer important"
+			self.out = "It's no longer important."
 			return False
 			
 		if (self.internal_state == "INITIALISED"):
@@ -108,17 +116,18 @@ class quest():
 			self.out = "Hold up! Finish the quest first, please!"
 			return False
 	
-	def _questUpdate(self, event = ""):
-		out = ""
-		if (event in self.events):
-			for i in self.events[event]:
-				out += i(self)
-		return { "transcript" : self.out }
-
+	def _fail(self):
+		self.internal_state == "FAILED"
+		return True
+	
 	def describe(self):
 		return self.out
 	
+	def detail(self):
+		ret = "No details are defined for this quest.\n\n"
+		ret += "To add some, add a 'def detail(self): ... ' function to your quest\n\n"
+		ret += "Also, if you haven't done so already, add a 'describe' definition to add a brief description of your quest.\n\nThanks." 
+		return ret
+		
 	def pushTime(self):
 		return 0.01
-	
-	

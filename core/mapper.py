@@ -418,7 +418,7 @@ class mapper():
 					tr = (i['current'][0] + j[0], i['current'][1] + j[1], i['current'][2] + j[2])
 					if not (tr in tried_squares):
 						if (tr in self.tiles and self.tiles[tr]['type'] not in self.forbid_move):
-							rtdt = abs(tr[0] - finish[0]) + abs(tr[1] - finish[1]) + (abs(tr[2] - finish[2]))
+							rtdt = abs(tr[0] - finish[0]) + abs(tr[1] - finish[1]) + abs(tr[2] - finish[2])
 							if (rtdt == 0):
 								#print(start)
 								print({ "current" : tr, "history" : i['history'] + [i['current'], finish] })
